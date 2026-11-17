@@ -124,8 +124,9 @@ label.alan textarea{min-height:110px;resize:vertical}
 .fotolar img{width:84px;height:84px;object-fit:cover;border-radius:10px;border:1px solid var(--cizgi)}
 .foto-ekle{width:84px;height:84px;border-radius:10px;border:2px dashed #94a3b8;background:#fff;font-size:28px;color:var(--soluk)}
 .tarayici{position:fixed;inset:0;background:#000;z-index:40;display:flex;flex-direction:column}
-.tarayici video{flex:1;width:100%;object-fit:cover;min-height:0}
-.tarayici .cerceve{position:absolute;left:50%;top:40%;width:230px;height:230px;transform:translate(-50%,-50%);border:4px solid #22d3ee;border-radius:18px;box-shadow:0 0 0 2000px rgba(0,0,0,.35);pointer-events:none}
+.video-alan{position:relative;flex:1;min-height:0;overflow:hidden}
+.video-alan video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.tarayici .cerceve{position:absolute;left:50%;top:50%;width:230px;height:230px;transform:translate(-50%,-50%);border:4px solid #22d3ee;border-radius:18px;box-shadow:0 0 0 2000px rgba(0,0,0,.35);pointer-events:none}
 .tarayici .alt-bar{padding:14px 16px calc(14px + env(safe-area-inset-bottom));background:#0f172a;color:#fff;text-align:center}
 .durum-satir{font-size:14px;margin-top:6px;padding:7px 10px;border-radius:10px}
 .d-var{background:var(--yesil-acik);color:#14532d}.d-yakin{background:var(--sari-acik);color:#78350f}.d-gecmis{background:var(--kirmizi-acik);color:#7f1d1d}.d-benzer{background:var(--mavi-acik);color:#1e3a8a}.d-yok{background:#f1f5f9;color:#334155}
@@ -855,44 +856,110 @@ function gs1Coz(t){
   } else delete r.skt;
   return r;
 }
-function zxingYukle(){
-  return window.ZXing ? Promise.resolve() : new Promise((ok,no) => { const s = document.createElement("script"); s.src = "zxing.min.js"; s.onload = ok; s.onerror = no; document.head.appendChild(s); });
+/* Kod okuyucular: önce telefonun kendi okuyucusu (Android Chrome: BarcodeDetector),
+   yoksa ya da bulamazsa ZXing-C++ (WebAssembly, uygulamanın içinde: zxing_okuyucu.js + zxing_reader.wasm) */
+let _yerli = undefined;
+async function yerliOkuyucu(){
+  if(_yerli !== undefined) return _yerli;
+  _yerli = null;
+  try{
+    if("BarcodeDetector" in window){
+      const f = await BarcodeDetector.getSupportedFormats();
+      if(f.includes("data_matrix")) _yerli = new BarcodeDetector({formats:["data_matrix","ean_13","qr_code"].filter(x => f.includes(x))});
+    }
+  }catch(e){ _yerli = null; }
+  return _yerli;
 }
-function ipuclari(){
-  const h = new Map();
-  h.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [ZXing.BarcodeFormat.DATA_MATRIX, ZXing.BarcodeFormat.EAN_13, ZXing.BarcodeFormat.QR_CODE]);
-  h.set(ZXing.DecodeHintType.TRY_HARDER, true);
-  return h;
+let _wasm = null;
+function wasmYukle(){
+  return _wasm || (_wasm = new Promise((ok, no) => {
+    const s = document.createElement("script"); s.src = "zxing_okuyucu.js";
+    s.onload = () => {
+      const wasmAdres = new URL("zxing_reader.wasm", location.href).href;
+      Promise.resolve(ZXingWASM.prepareZXingModule({overrides:{locateFile:(p, on) => p.endsWith(".wasm") ? wasmAdres : on + p}, fireImmediately:true})).then(() => ok(), no);
+    };
+    s.onerror = no; document.head.appendChild(s);
+  }).catch(e => { _wasm = null; throw e; }));
+}
+const WASM_AYAR = {formats:["DataMatrix","EAN13","QRCode"], tryHarder:true, tryRotate:true, tryInvert:true, tryDownscale:true, maxNumberOfSymbols:1};
+async function wasmOku(girdi, ek){
+  await wasmYukle();
+  const r = await ZXingWASM.readBarcodes(girdi, Object.assign({}, WASM_AYAR, ek||{}));
+  const iyi = (r||[]).find(x => x.isValid !== false && x.text);
+  return iyi ? iyi.text : null;
+}
+/* Kaynağın (video ya da resim) ortasından kare bir parça kesip büyütür */
+function ortaKes(kaynak, gen, yuk, oran, hedef){
+  const k = Math.min(gen, yuk) * oran, x = (gen - k) / 2, y = (yuk - k) / 2;
+  const c = document.createElement("canvas"); c.width = c.height = hedef;
+  const ctx = c.getContext("2d", {willReadFrequently:true});
+  ctx.drawImage(kaynak, x, y, k, k, 0, 0, hedef, hedef);
+  return ctx.getImageData(0, 0, hedef, hedef);
+}
+async function resimdenOku(dosya){
+  const yerli = await yerliOkuyucu();
+  if(yerli){ try{ const bmp = await createImageBitmap(dosya); const r = await yerli.detect(bmp); if(r.length) return r[0].rawValue; }catch(e){} }
+  try{ const t = await wasmOku(dosya); if(t) return t; }catch(e){}
+  try{ // yakın plan için ortadan kesip bir daha dene
+    const bmp = await createImageBitmap(dosya);
+    for(const oran of [0.5, 0.3]){ const t = await wasmOku(ortaKes(bmp, bmp.width, bmp.height, oran, 1200)); if(t) return t; }
+  }catch(e){}
+  return null;
 }
 function karekodOku(){
   return new Promise(async bitti => {
     const d = document.createElement("div"); d.className = "tarayici";
-    d.innerHTML = `<video playsinline muted autoplay></video><div class="cerceve"></div>
-      <div class="alt-bar"><div id="t_yazi" style="margin-bottom:10px">İlaç kutusundaki <b>küçük kare kodu</b> çerçevenin içine getirin.</div>
-      <div class="satir"><button class="btn ikincil" id="t_foto">📷 Fotoğrafla dene</button><button class="btn tehlike" id="t_iptal">Vazgeç</button></div>
-      <input type="file" accept="image/*" id="t_in" hidden></div>`;
+    d.innerHTML = `<div class="video-alan"><video playsinline muted autoplay></video><div class="cerceve"></div></div>
+      <div class="alt-bar"><div id="t_yazi" style="margin-bottom:10px">İlaç kutusundaki <b>küçük kare kodu</b> çerçevenin içine getirin.<br><span class="kucuk-yazi" style="color:#cbd5e1">Kodu yavaşça yaklaştırıp uzaklaştırın; net görününce kendiliğinden okur.</span></div>
+      <div class="satir"><button class="btn ikincil" id="t_foto">📷 Fotoğraf çek</button><button class="btn tehlike" id="t_iptal">Vazgeç</button></div>
+      <input type="file" accept="image/*" capture="environment" id="t_in" hidden></div>`;
     document.body.appendChild(d);
-    const video = d.querySelector("video"); let okuyucu = null, dur = false;
+    const video = d.querySelector("video"); let akis = null, dur = false, zam = null;
     const kapat = sonuc => {
-      if(dur) return; dur = true;
-      try{ okuyucu && okuyucu.reset(); }catch(e){}
-      try{ if(video.srcObject) video.srcObject.getTracks().forEach(t => t.stop()); }catch(e){}
-      d.remove(); bitti(sonuc);
+      if(dur) return; dur = true; clearTimeout(zam);
+      if(akis) akis.getTracks().forEach(t => t.stop());
+      d.remove(); if(sonuc && navigator.vibrate) navigator.vibrate(120); bitti(sonuc);
     };
     d.querySelector("#t_iptal").onclick = () => kapat(null);
     const inp = d.querySelector("#t_in");
     d.querySelector("#t_foto").onclick = () => inp.click();
     inp.onchange = async () => {
       const f = inp.files[0]; inp.value = ""; if(!f) return;
-      try{ await zxingYukle(); const u = await fotoKucult(f, 2000); const r = await new ZXing.BrowserMultiFormatReader(ipuclari()).decodeFromImageUrl(u); kapat(r.getText()); }
-      catch(e){ alert("Fotoğrafta kod bulunamadı. Kare kodu yakından, net ve iyi ışıkta çekmeyi deneyin."); }
+      d.querySelector("#t_yazi").innerHTML = "Fotoğraf inceleniyor…";
+      let t = null; try{ t = await resimdenOku(f); }catch(e){}
+      if(t) kapat(t);
+      else d.querySelector("#t_yazi").innerHTML = "<b>Fotoğrafta kod bulunamadı.</b><br>Kare kodu ortalayıp yakından, net ve iyi ışıkta tekrar çekin.";
     };
+    wasmYukle().catch(() => {}); // arka planda hazırlansın
     try{
-      await zxingYukle(); if(dur) return;
-      okuyucu = new ZXing.BrowserMultiFormatReader(ipuclari());
-      await okuyucu.decodeFromConstraints({video:{facingMode:"environment", width:{ideal:1920}, height:{ideal:1080}}}, video, r => { if(r) kapat(r.getText()); });
+      akis = await navigator.mediaDevices.getUserMedia({audio:false, video:{facingMode:{ideal:"environment"}, width:{ideal:1920}, height:{ideal:1080}}});
+      if(dur){ akis.getTracks().forEach(t => t.stop()); return; }
+      video.srcObject = akis; await video.play().catch(() => {});
+      try{ // sürekli odak + biraz yakınlaştırma (küçük kodlar için)
+        const iz = akis.getVideoTracks()[0], cap = iz.getCapabilities ? iz.getCapabilities() : {}, adv = [];
+        if(cap.focusMode && cap.focusMode.includes("continuous")) adv.push({focusMode:"continuous"});
+        if(cap.zoom && cap.zoom.max >= 1.5) adv.push({zoom: Math.min(cap.zoom.max, 2)});
+        if(adv.length) await iz.applyConstraints({advanced:adv});
+      }catch(e){}
+      const yerli = await yerliOkuyucu();
+      let sira = 0;
+      const tara = async () => {
+        if(dur) return;
+        if(video.readyState >= 2 && video.videoWidth){
+          let t = null;
+          try{
+            // Android: telefonun kendi okuyucusu; her 4 denemeden birinde (ve iPhone'da hep) ZXing de dener
+            if(yerli && sira % 4 !== 3){ const r = await yerli.detect(video); if(r.length) t = r[0].rawValue; }
+            else { const oran = [0.6, 0.45, 0.8][sira % 3]; t = await wasmOku(ortaKes(video, video.videoWidth, video.videoHeight, oran, 800)); }
+          }catch(e){}
+          sira++;
+          if(t){ kapat(t); return; }
+        }
+        zam = setTimeout(tara, 120);
+      };
+      tara();
     }catch(e){
-      if(!dur) d.querySelector("#t_yazi").innerHTML = "Kamera açılamadı. Telefon sorarsa <b>kameraya izin verin</b> ya da <b>Fotoğrafla dene</b>ye dokunun.";
+      if(!dur) d.querySelector("#t_yazi").innerHTML = "Kamera açılamadı. Telefon sorarsa <b>kameraya izin verin</b> ya da <b>Fotoğraf çek</b>e dokunun.";
     }
   });
 }
