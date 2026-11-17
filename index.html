@@ -398,7 +398,7 @@ function ekranKisi(){
   }
   else if(durum.sekme === "recete"){ h += receteListesiHTML(k.id); }
   else if(durum.sekme === "ilac"){
-    h += `<button class="btn genis" onclick="ilacFormu()" style="margin-bottom:12px">＋ İlaç ekle</button>`;
+    h += `<div class="satir" style="margin-bottom:12px"><button class="btn" onclick="ilacKarekodlaEkle()">📷 Karekodla ekle</button><button class="btn ikincil" onclick="ilacFormu()">✍️ Elle ekle</button></div>`;
     const is = V.ilaclar.filter(i => i.kid === k.id);
     const aktif = is.filter(i => !i.durdu), biten = is.filter(i => i.durdu);
     if(aktif.length) h += gunlukOzet(aktif);
@@ -557,6 +557,7 @@ function ilacFormu(id, on){
   const zs = {}; (il.zamanlar||[]).forEach(z => zs[z.dilim||dilimBul(z.saat)] = z.saat);
   pencere(`<h3>${id?"İlaç":"Yeni ilaç"} · ${esc(kisi(kid).ad)}</h3>
     ${ilacAdAlani(il.ad)}
+    <button type="button" class="btn ikincil kucuk" style="margin:-4px 0 14px" onclick="kalemKarekod()">📷 Adı kutudaki karekoddan al</button>
     ${alan("f_doz","Ne kadar?",il.doz,"text","Örnek: 1 tablet, yarım tablet, 10 damla")}
     <label class="alan">Nasıl alınacak?</label>
     ${secimKutusu("f_kul", [["ac","Aç karnına"],["tok","Tok karnına"],["yemek","Yemekle birlikte"],["fark","Fark etmez"]], il.kullanim||"tok")}
@@ -1187,12 +1188,21 @@ function kalemEkle(){
   document.getElementById("f_ad").value = ""; document.getElementById("f_kul").value = ""; document.getElementById("f_ara").innerHTML = "";
   FORM_ILAC = {}; etkenYaz(); kalemleriCiz();
 }
-async function kalemKarekod(){
-  const t = await karekodOku(); if(!t) return;
-  const k = gs1Coz(t); if(!k.barkod){ alert("Okunan kod bir ilaç kodu değil."); return; }
+async function karekodIlac(){ // okut → Bakanlık listesindeki kayıt (ya da null)
+  const t = await karekodOku(); if(!t) return null;
+  const k = gs1Coz(t); if(!k.barkod){ alert("Okunan kod bir ilaç kodu değil. Kutunun üstündeki küçük kare kodu okutun."); return null; }
   let x = null; try{ x = (await ilacListesi()).barkod.get(k.barkod) || null; }catch(e){}
-  if(!x){ alert("Bu barkod Sağlık Bakanlığı listesinde bulunamadı; ilacın adını yazın."); return; }
-  document.getElementById("f_ad").value = x[1]; FORM_ILAC = {barkod:x[0], etken:x[2]}; etkenYaz();
+  if(!x){ alert("Bu barkod Sağlık Bakanlığı listesinde bulunamadı; ilacın adını yazın."); return null; }
+  return x;
+}
+async function kalemKarekod(){
+  const x = await karekodIlac(); if(!x) return;
+  document.getElementById("f_ad").value = x[1]; document.getElementById("f_ara").innerHTML = "";
+  FORM_ILAC = {barkod:x[0], etken:x[2]}; etkenYaz();
+}
+async function ilacKarekodlaEkle(){
+  const x = await karekodIlac(); if(!x) return;
+  ilacFormu(null, {kid:durum.kid, ad:x[1], barkod:x[0], etken:x[2]});
 }
 function receteKaydet(id, kid){
   if(deg("f_ad") && confirm("Yazdığınız ilaç (" + deg("f_ad") + ") henüz listeye eklenmedi. Eklensin mi?")) kalemEkle();
