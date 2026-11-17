@@ -113,6 +113,34 @@ label.alan textarea{min-height:110px;resize:vertical}
 .ozet span{font-size:13px;color:var(--soluk)}
 .gun-bas{color:var(--soluk);font-size:15px;margin:0 4px 12px}
 .kucuk-yazi{font-size:13px;color:var(--soluk)}
+.acil{display:flex;gap:8px;margin-bottom:12px}
+.acil a{flex:1;text-align:center;text-decoration:none;background:var(--kirmizi);color:#fff;font-weight:800;border-radius:14px;padding:12px 6px;font-size:16px}
+.acil a.zehir{background:#7c2d12}
+.ara-sonuc{background:#fff;border:1px solid #cbd5e1;border-radius:12px;margin:-6px 0 12px;overflow:hidden}
+.ara-sonuc button{display:block;width:100%;text-align:left;border:0;border-top:1px solid var(--cizgi);background:#fff;padding:10px 12px;font-size:15px;color:var(--yazi)}
+.ara-sonuc button:first-child{border-top:0}
+.ara-sonuc small{display:block;color:var(--soluk)}
+.fotolar{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 12px}
+.fotolar img{width:84px;height:84px;object-fit:cover;border-radius:10px;border:1px solid var(--cizgi)}
+.foto-ekle{width:84px;height:84px;border-radius:10px;border:2px dashed #94a3b8;background:#fff;font-size:28px;color:var(--soluk)}
+.tarayici{position:fixed;inset:0;background:#000;z-index:40;display:flex;flex-direction:column}
+.tarayici video{flex:1;width:100%;object-fit:cover;min-height:0}
+.tarayici .cerceve{position:absolute;left:50%;top:40%;width:230px;height:230px;transform:translate(-50%,-50%);border:4px solid #22d3ee;border-radius:18px;box-shadow:0 0 0 2000px rgba(0,0,0,.35);pointer-events:none}
+.tarayici .alt-bar{padding:14px 16px calc(14px + env(safe-area-inset-bottom));background:#0f172a;color:#fff;text-align:center}
+.durum-satir{font-size:14px;margin-top:6px;padding:7px 10px;border-radius:10px}
+.d-var{background:var(--yesil-acik);color:#14532d}.d-yakin{background:var(--sari-acik);color:#78350f}.d-gecmis{background:var(--kirmizi-acik);color:#7f1d1d}.d-benzer{background:var(--mavi-acik);color:#1e3a8a}.d-yok{background:#f1f5f9;color:#334155}
+.kalem{background:#fff;border:1px solid var(--cizgi);border-radius:12px;padding:10px 12px;margin:8px 0}
+.ek-kutu{background:#f8fafc;box-shadow:none;border:1px dashed #94a3b8}
+.uyari.yesil{background:var(--yesil-acik);color:#14532d}
+.buyuk-foto{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:45;display:flex;align-items:center;justify-content:center}
+.buyuk-foto img{max-width:100%;max-height:100%}
+.foto-dugmeler{position:absolute;bottom:calc(20px + env(safe-area-inset-bottom));left:0;right:0;display:flex;gap:10px;justify-content:center}
+.kur-bant{display:flex;align-items:center;gap:10px;background:var(--ana-acik);color:#134e4a;border-radius:14px;padding:12px 14px;margin-bottom:12px;font-size:14px}
+.kur-bant b{font-size:16px}
+.kapat-x{border:0;background:none;font-size:20px;color:#134e4a;padding:4px 6px}
+.adimlar{padding-left:22px;margin:0 0 14px}
+.adimlar li{margin-bottom:12px;font-size:17px}
+.ikon-kutu{display:inline-block;background:#fff;border:1px solid var(--cizgi);border-radius:8px;padding:0 6px}
 </style>
 </head>
 <body>
@@ -121,6 +149,7 @@ label.alan textarea{min-height:110px;resize:vertical}
 <nav class="alt">
   <button data-git="bugun"><span class="s">🗓️</span>Bugün</button>
   <button data-git="kisiler"><span class="s">👨‍👩‍👧</span>Kişiler</button>
+  <button data-git="dolap"><span class="s">💊</span>İlaç Dolabı</button>
   <button data-git="ayarlar"><span class="s">⚙️</span>Ayarlar</button>
 </nav>
 <div id="pencere-yeri"></div>
@@ -131,7 +160,7 @@ label.alan textarea{min-height:110px;resize:vertical}
 /* ============ VERİ (yalnız bu telefonda, localStorage) ============ */
 const ANAHTAR = "bekapsaglik_v1";
 let V = yukle();
-function bos(){ return {kisiler:[], randevular:[], ilaclar:[], tahliller:[], notlar:[], alinan:{}, bildirilen:{}, ayar:{}}; }
+function bos(){ return {kisiler:[], randevular:[], ilaclar:[], tahliller:[], notlar:[], stok:[], receteler:[], alinan:{}, bildirilen:{}, ayar:{}}; }
 function yukle(){
   try{ const t = localStorage.getItem(ANAHTAR); if(t){ const d = JSON.parse(t); return Object.assign(bos(), d); } }catch(e){}
   return bos();
@@ -212,14 +241,15 @@ function ciz(){
   if(durum.ekran === "bugun") E.innerHTML = ekranBugun();
   else if(durum.ekran === "kisiler"){ bas = "Kişiler"; E.innerHTML = ekranKisiler(); }
   else if(durum.ekran === "kisi"){ bas = kisi(durum.kid).ad; E.innerHTML = ekranKisi(); }
-  else if(durum.ekran === "ayarlar"){ bas = "Ayarlar"; E.innerHTML = ekranAyarlar(); }
+  else if(durum.ekran === "dolap"){ bas = "İlaç Dolabı"; E.innerHTML = ekranDolap(); }
+  else if(durum.ekran === "ayarlar"){ bas = "Ayarlar"; E.innerHTML = ekranAyarlar(); listeBilgisi(); }
   document.getElementById("baslik").textContent = bas;
 }
 
 /* ============ BUGÜN ============ */
 function ekranBugun(){
   const gun = bugunStr(), d = new Date();
-  let h = `<p class="gun-bas">${d.getDate()} ${AYLAR[d.getMonth()]} ${d.getFullYear()}, ${GUNLER[d.getDay()]}</p>`;
+  let h = kurBandi() + `<p class="gun-bas">${d.getDate()} ${AYLAR[d.getMonth()]} ${d.getFullYear()}, ${GUNLER[d.getDay()]}</p>`;
   if(!V.kisiler.length){
     return h + `<div class="kart"><div class="baslik">Hoş geldiniz 👋</div>
       <p>BEKAPSAĞLIK ile ailenizdeki kişilerin doktor randevularını, ilaçlarını ve tahlillerini tek yerden takip edebilirsiniz.</p>
@@ -233,6 +263,9 @@ function ekranBugun(){
     if(f < 0) h += `<div class="uyari kirmizi">⚠️ <b>${esc(kisi(il.kid).ad)}</b> · ${esc(il.ad)}: ilaç raporunun süresi <b>${-f} gün önce doldu</b> (${tarihKisa(il.rapor)}).</div>`;
     else if(f <= 30) h += `<div class="uyari">📄 <b>${esc(kisi(il.kid).ad)}</b> · ${esc(il.ad)}: ilaç raporu <b>${f === 0 ? "bugün" : f+" gün sonra"}</b> bitiyor (${tarihKisa(il.rapor)}).</div>`;
   });
+  const sg = V.stok.filter(s => s.adet > 0 && s.skt && gunFarki(gun, s.skt) < 0).length;
+  const sy = V.stok.filter(s => s.adet > 0 && s.skt && gunFarki(gun, s.skt) >= 0 && gunFarki(gun, s.skt) <= 60).length;
+  if(sg || sy) h += `<div class="uyari ${sg ? "kirmizi" : ""}" onclick="gecmis.length=0;durum={ekran:'dolap'};ciz()">💊 İlaç dolabı: ${sg ? `<b>${sg} ilacın tarihi geçmiş</b>` : ""}${sg && sy ? ", " : ""}${sy ? `<b>${sy} ilacın tarihi 60 gün içinde doluyor</b>` : ""}. Görmek için dokunun.</div>`;
   const liste = gunlukListe(gun);
   const alinan = V.alinan[gun] || {};
   const verilen = liste.filter(x => alinan[x.anahtar]).length;
@@ -323,7 +356,7 @@ function ekranKisiler(){
 }
 function ekranKisi(){
   const k = kisi(durum.kid);
-  const S = [["randevu","🩺 Randevular"],["ilac","💊 İlaçlar"],["tahlil","🧪 Tahliller"],["not","📝 Notlar"],["bilgi","👤 Bilgiler"]];
+  const S = [["randevu","🩺 Randevular"],["recete","📋 Reçeteler"],["ilac","💊 İlaçlar"],["tahlil","🧪 Tahliller"],["not","📝 Notlar"],["bilgi","👤 Bilgiler"]];
   let h = `<div class="sekmeler">` + S.map(([s,a]) => `<button class="${durum.sekme===s?"on":""}" onclick="sekme('${s}')">${a}</button>`).join("") + `</div>`;
   if(durum.sekme === "randevu"){
     h += `<button class="btn genis" onclick="randevuFormu()" style="margin-bottom:12px">＋ Randevu ekle</button>`;
@@ -333,6 +366,7 @@ function ekranKisi(){
     h += `<h2>Yaklaşan</h2>` + (yak.length ? yak.map(r => olayKarti({tur:"randevu",o:r})).join("") : `<div class="bos">Yaklaşan randevu yok.</div>`);
     if(gec.length) h += `<h2>Geçmiş randevular</h2>` + gec.map(r => olayKarti({tur:"randevu",o:r})).join("");
   }
+  else if(durum.sekme === "recete"){ h += receteListesiHTML(k.id); }
   else if(durum.sekme === "ilac"){
     h += `<button class="btn genis" onclick="ilacFormu()" style="margin-bottom:12px">＋ İlaç ekle</button>`;
     const is = V.ilaclar.filter(i => i.kid === k.id);
@@ -396,6 +430,7 @@ function ilacKarti(il){
     ${zs ? `<div class="bilgi">${zs}</div>` : ""}
     ${il.bit ? `<div class="bilgi">Bitiş: ${tarihKisa(il.bit)}</div>` : ""}
     ${rapor}
+    ${!il.durdu ? stokKarsilastir(il) : ""}
     ${il.not ? `<div class="not">${esc(il.not)}</div>` : ""}
   </div>`;
 }
@@ -445,7 +480,9 @@ function kisiKaydet(id){
 }
 function kisiSil(id){
   if(!confirm(kisi(id).ad + " ve ona ait bütün randevu, ilaç, tahlil ve notlar silinecek. Emin misiniz?")) return;
-  ["randevular","ilaclar","tahliller","notlar"].forEach(l => V[l] = V[l].filter(x => x.kid !== id));
+  V.receteler.filter(r => r.kid === id).forEach(r => (r.fotolar||[]).forEach(f => fotoSilDB(f).catch(() => {})));
+  ["randevular","ilaclar","tahliller","notlar","receteler"].forEach(l => V[l] = V[l].filter(x => x.kid !== id));
+  V.stok.forEach(s => { if(s.kime === id) s.kime = ""; });
   V.kisiler = V.kisiler.filter(k => k.id !== id);
   kaydet(); kapat(); gecmis.length = 0; durum = {ekran:"kisiler"}; ciz();
 }
@@ -483,12 +520,13 @@ function randevuKaydet(id, kid){
 }
 
 /* İlaç */
-function ilacFormu(id){
-  const il = id ? V.ilaclar.find(x => x.id === id) : {kid:durum.kid, kullanim:"tok", siklik:"hergun", zamanlar:[{dilim:"sabah",saat:"08:00"}], bas:bugunStr()};
+function ilacFormu(id, on){
+  const il = id ? V.ilaclar.find(x => x.id === id) : Object.assign({kid:durum.kid, kullanim:"tok", siklik:"hergun", zamanlar:[{dilim:"sabah",saat:"08:00"}], bas:bugunStr()},
+    on ? {kid:on.kid, ad:on.ad, barkod:on.barkod, etken:on.etken, not:on.not} : {});
   const kid = il.kid || durum.kid;
   const zs = {}; (il.zamanlar||[]).forEach(z => zs[z.dilim||dilimBul(z.saat)] = z.saat);
   pencere(`<h3>${id?"İlaç":"Yeni ilaç"} · ${esc(kisi(kid).ad)}</h3>
-    ${alan("f_ad","İlacın adı",il.ad,"text","Örnek: Beloc 50 mg")}
+    ${ilacAdAlani(il.ad)}
     ${alan("f_doz","Ne kadar?",il.doz,"text","Örnek: 1 tablet, yarım tablet, 10 damla")}
     <label class="alan">Nasıl alınacak?</label>
     ${secimKutusu("f_kul", [["ac","Aç karnına"],["tok","Tok karnına"],["yemek","Yemekle birlikte"],["fark","Fark etmez"]], il.kullanim||"tok")}
@@ -504,7 +542,9 @@ function ilacFormu(id){
     <div class="satir"><button class="btn ikincil" onclick="kapat()">Vazgeç</button><button class="btn" onclick="ilacKaydet('${id||""}','${kid}')">Kaydet</button></div>
     ${id ? `<div class="islemler"><button class="btn ikincil kucuk" onclick="takvimeEkle('ilac','${id}')">📲 Telefonun takvimine ilaç alarmı ekle</button>
       <button class="btn tehlike kucuk" onclick="sil('ilaclar','${id}','Bu ilaç silinsin mi?')">🗑️ Sil</button></div>` : ""}`);
+  FORM_ILAC = {barkod:il.barkod||"", etken:il.etken||""}; etkenYaz(); _ilacOn = on || null;
 }
+let _ilacOn = null;
 function ilacKaydet(id, kid){
   const ad = deg("f_ad"); if(!ad){ alert("Lütfen ilacın adını yazın."); return; }
   const siklik = document.getElementById("f_siklik").dataset.deger;
@@ -513,9 +553,10 @@ function ilacKaydet(id, kid){
   const gunler = [...document.querySelectorAll(".f_gun:checked")].map(x => +x.value);
   if(siklik === "gunler" && !gunler.length){ alert("Lütfen haftanın hangi günleri olduğunu işaretleyin."); return; }
   const il = id ? V.ilaclar.find(x => x.id === id) : {id:yeniId(), kid};
-  Object.assign(il, {ad, doz:deg("f_doz"), kullanim:document.getElementById("f_kul").dataset.deger, zamanlar, siklik, gunler,
+  Object.assign(il, {ad, barkod:FORM_ILAC.barkod||"", etken:FORM_ILAC.etken||"", doz:deg("f_doz"), kullanim:document.getElementById("f_kul").dataset.deger, zamanlar, siklik, gunler,
     bas:deg("f_bas") || bugunStr(), bit:deg("f_bit"), rapor:deg("f_rap"), not:deg("f_not"), durdu:document.getElementById("f_durdu").checked});
   if(!id) V.ilaclar.push(il);
+  if(!id && _ilacOn && _ilacOn.recete){ const r = V.receteler.find(x => x.id === _ilacOn.recete); if(r && r.kalemler[_ilacOn.kalem]) r.kalemler[_ilacOn.kalem].ilacId = il.id; }
   kaydet(); kapat(); ciz();
   if(!id && siklik !== "lazim" && confirm("İlaç kaydedildi.\n\nUygulama kapalıyken de ilaç saatinde haber verilmesi için telefonunuzun takvimine alarm eklensin mi?")) takvimeEkle("ilac", il.id);
 }
@@ -689,6 +730,395 @@ function kontrol(){
   if(degisti) kaydet();
 }
 
+/* ============ FOTOĞRAF DEPOSU (telefonun içinde, IndexedDB) ============ */
+let _fdb;
+function fdb(){ return _fdb || (_fdb = new Promise((ok,no) => { const r = indexedDB.open("bekapsaglik_foto", 1); r.onupgradeneeded = () => r.result.createObjectStore("f"); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); })); }
+async function fotoIslem(mod, fn){ const d = await fdb(); return new Promise((ok,no) => { const t = d.transaction("f", mod), q = fn(t.objectStore("f")); t.oncomplete = () => ok(q ? q.result : undefined); t.onerror = () => no(t.error); }); }
+const fotoKoy = (id, v) => fotoIslem("readwrite", s => s.put(v, id));
+const fotoAl = id => fotoIslem("readonly", s => s.get(id));
+const fotoSilDB = id => fotoIslem("readwrite", s => s.delete(id));
+async function fotoHepsi(){ const d = await fdb(); return new Promise((ok,no) => { const out = {}, t = d.transaction("f","readonly"), r = t.objectStore("f").openCursor(); r.onsuccess = () => { const c = r.result; if(c){ out[c.key] = c.value; c.continue(); } }; t.oncomplete = () => ok(out); t.onerror = () => no(t.error); }); }
+async function fotoHepsiniSil(){ try{ await fotoIslem("readwrite", s => s.clear()); }catch(e){} }
+async function fotoTemizle(){ // hiçbir kayda bağlı olmayan fotoğrafları sil
+  try{
+    const kull = new Set(); [...V.stok, ...V.receteler].forEach(x => (x.fotolar||[]).forEach(f => kull.add(f)));
+    const d = await fdb(), t = d.transaction("f","readwrite"), s = t.objectStore("f"), r = s.getAllKeys();
+    r.onsuccess = () => r.result.forEach(k => { if(!kull.has(k)) s.delete(k); });
+  }catch(e){}
+}
+function fotoKucult(dosya, enBuyuk){
+  return new Promise((ok,no) => {
+    const img = new Image(), u = URL.createObjectURL(dosya);
+    img.onload = () => {
+      const o = Math.min(1, (enBuyuk||1600) / Math.max(img.width, img.height));
+      const c = document.createElement("canvas"); c.width = Math.round(img.width*o); c.height = Math.round(img.height*o);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(u); ok(c.toDataURL("image/jpeg", 0.75));
+    };
+    img.onerror = () => { URL.revokeObjectURL(u); no(new Error("foto")); };
+    img.src = u;
+  });
+}
+let FORM_FOTO = [];
+function fotoAlani(ids, etiket){
+  FORM_FOTO = (ids||[]).slice(); setTimeout(fotolariCiz, 0);
+  return `<label class="alan">${etiket}</label><div class="fotolar" id="f_fotolar"></div><input type="file" id="f_foto_in" accept="image/*" hidden onchange="fotoEklendi(this)">`;
+}
+async function fotolariCiz(){
+  const y = document.getElementById("f_fotolar"); if(!y) return;
+  let h = "";
+  for(const id of FORM_FOTO){ const v = await fotoAl(id).catch(() => null); if(v) h += `<img src="${v}" alt="" onclick="fotoBuyut('${id}')">`; }
+  h += `<button type="button" class="foto-ekle" aria-label="Fotoğraf ekle" onclick="document.getElementById('f_foto_in').click()">📷</button>`;
+  y.innerHTML = h;
+}
+async function fotoEklendi(inp){
+  const f = inp.files[0]; inp.value = ""; if(!f) return;
+  try{ const v = await fotoKucult(f); const id = "f" + yeniId(); await fotoKoy(id, v); FORM_FOTO.push(id); fotolariCiz(); }
+  catch(e){ alert("Fotoğraf eklenemedi."); }
+}
+async function fotoBuyut(id){
+  const v = await fotoAl(id).catch(() => null); if(!v) return;
+  const formda = FORM_FOTO.includes(id) && document.getElementById("f_fotolar");
+  const d = document.createElement("div"); d.className = "buyuk-foto";
+  d.innerHTML = `<img src="${v}" alt=""><div class="foto-dugmeler"><button class="btn ikincil">Kapat</button>${formda ? '<button class="btn tehlike">Fotoğrafı çıkar</button>' : ""}</div>`;
+  const [k, s] = d.querySelectorAll("button");
+  k.onclick = () => d.remove();
+  if(s) s.onclick = () => { FORM_FOTO = FORM_FOTO.filter(x => x !== id); d.remove(); fotolariCiz(); };
+  document.body.appendChild(d);
+}
+
+/* ============ İLAÇ LİSTESİ (Sağlık Bakanlığı, uygulamanın içinde) ============ */
+let _liste = null;
+function ilacListesi(){
+  return _liste || (_liste = fetch("ilac_listesi.json").then(r => r.json()).then(d => {
+    const m = new Map(); d.liste.forEach(x => { if(x[0]) m.set(x[0], x); });
+    return {tarih:d.tarih, liste:d.liste, barkod:m};
+  }).catch(e => { _liste = null; throw e; }));
+}
+const kucuk = s => String(s||"").toLocaleLowerCase("tr");
+async function ilacAra(q){
+  q = kucuk(q).trim(); if(q.length < 2) return [];
+  const L = await ilacListesi(), ks = q.split(/\s+/), out = [];
+  for(const x of L.liste){
+    const a = kucuk(x[1]), e = kucuk(x[2]);
+    if(ks.every(k => a.includes(k) || e.includes(k))){ out.push(x); if(out.length >= 60) break; }
+  }
+  out.sort((a,b) => (kucuk(a[1]).startsWith(ks[0]) ? 0 : 1) - (kucuk(b[1]).startsWith(ks[0]) ? 0 : 1));
+  return out.slice(0, 8);
+}
+let FORM_ILAC = {};
+function ilacAdAlani(deger, ipucu){
+  return `<label class="alan">İlacın adı<input id="f_ad" type="text" value="${esc(deger)}" autocomplete="off" oninput="aramaYap(this.value)"><div class="ipucu">${ipucu || "Yazmaya başlayın, çıkan listeden seçin (Sağlık Bakanlığı ilaç listesi)."}</div></label><div id="f_ara"></div><div id="f_etken" class="ipucu" style="margin:-6px 0 10px"></div>`;
+}
+let _araT;
+function aramaYap(q){
+  if(!FORM_ILAC.kilit) FORM_ILAC = {};
+  etkenYaz(); clearTimeout(_araT);
+  _araT = setTimeout(async () => {
+    const y = document.getElementById("f_ara"); if(!y) return;
+    let s = []; try{ s = await ilacAra(q); }catch(e){}
+    y.innerHTML = s.length ? `<div class="ara-sonuc">` + s.map(x => `<button type="button" data-b="${x[0]}" data-a="${esc(x[1])}" data-e="${esc(x[2])}" onclick="ilacSec(this)">${esc(x[1])}<small>${esc(x[2])}${x[3] ? " · ruhsatı askıda" : ""}</small></button>`).join("") + `</div>` : "";
+  }, 200);
+}
+function ilacSec(b){
+  document.getElementById("f_ad").value = b.dataset.a;
+  FORM_ILAC = {barkod:b.dataset.b, etken:b.dataset.e};
+  document.getElementById("f_ara").innerHTML = ""; etkenYaz();
+}
+function etkenYaz(){ const y = document.getElementById("f_etken"); if(y) y.textContent = FORM_ILAC.etken ? "Etken madde: " + FORM_ILAC.etken : ""; }
+
+/* ============ KAREKOD (İlaç Takip Sistemi kare kodu) ============ */
+function gs1Coz(t){
+  t = String(t||"").replace(/^\](d2|C1|Q3)/, "").replace(/^\u001d/, "");
+  const GS = "\u001d", r = {};
+  if(/^\d{8}$|^\d{13}$/.test(t)){ r.barkod = t; return r; }
+  if(t.includes(GS)){
+    let i = 0;
+    while(i < t.length){
+      const ai = t.substr(i, 2); i += 2;
+      if(ai === "01"){ r.gtin = t.substr(i, 14); i += 14; }
+      else if(ai === "17"){ r.skt = t.substr(i, 6); i += 6; }
+      else if(ai === "10" || ai === "21"){ let j = t.indexOf(GS, i); if(j < 0) j = t.length; r[ai === "10" ? "parti" : "seri"] = t.slice(i, j); i = j + 1; }
+      else break;
+    }
+  } else {
+    let m;
+    if((m = t.match(/^01(\d{14})21(.+?)17(\d{6})10(.+)$/))) Object.assign(r, {gtin:m[1], seri:m[2], skt:m[3], parti:m[4]});
+    else if((m = t.match(/^01(\d{14})17(\d{6})10(.+?)21(.+)$/))) Object.assign(r, {gtin:m[1], skt:m[2], parti:m[3], seri:m[4]});
+    else if((m = t.match(/^01(\d{14})17(\d{6})10(.+)$/))) Object.assign(r, {gtin:m[1], skt:m[2], parti:m[3]});
+    else if((m = t.match(/^01(\d{14})/))) r.gtin = m[1];
+  }
+  if(r.gtin) r.barkod = r.gtin.replace(/^0/, "");
+  if(r.skt && /^\d{6}$/.test(r.skt)){
+    const y = 2000 + +r.skt.slice(0,2), a = +r.skt.slice(2,4); let g = +r.skt.slice(4,6);
+    if(a < 1 || a > 12) delete r.skt;
+    else { if(g === 0) g = new Date(y, a, 0).getDate(); r.skt = y + "-" + iki(a) + "-" + iki(g); }
+  } else delete r.skt;
+  return r;
+}
+function zxingYukle(){
+  return window.ZXing ? Promise.resolve() : new Promise((ok,no) => { const s = document.createElement("script"); s.src = "zxing.min.js"; s.onload = ok; s.onerror = no; document.head.appendChild(s); });
+}
+function ipuclari(){
+  const h = new Map();
+  h.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [ZXing.BarcodeFormat.DATA_MATRIX, ZXing.BarcodeFormat.EAN_13, ZXing.BarcodeFormat.QR_CODE]);
+  h.set(ZXing.DecodeHintType.TRY_HARDER, true);
+  return h;
+}
+function karekodOku(){
+  return new Promise(async bitti => {
+    const d = document.createElement("div"); d.className = "tarayici";
+    d.innerHTML = `<video playsinline muted autoplay></video><div class="cerceve"></div>
+      <div class="alt-bar"><div id="t_yazi" style="margin-bottom:10px">İlaç kutusundaki <b>küçük kare kodu</b> çerçevenin içine getirin.</div>
+      <div class="satir"><button class="btn ikincil" id="t_foto">📷 Fotoğrafla dene</button><button class="btn tehlike" id="t_iptal">Vazgeç</button></div>
+      <input type="file" accept="image/*" id="t_in" hidden></div>`;
+    document.body.appendChild(d);
+    const video = d.querySelector("video"); let okuyucu = null, dur = false;
+    const kapat = sonuc => {
+      if(dur) return; dur = true;
+      try{ okuyucu && okuyucu.reset(); }catch(e){}
+      try{ if(video.srcObject) video.srcObject.getTracks().forEach(t => t.stop()); }catch(e){}
+      d.remove(); bitti(sonuc);
+    };
+    d.querySelector("#t_iptal").onclick = () => kapat(null);
+    const inp = d.querySelector("#t_in");
+    d.querySelector("#t_foto").onclick = () => inp.click();
+    inp.onchange = async () => {
+      const f = inp.files[0]; inp.value = ""; if(!f) return;
+      try{ await zxingYukle(); const u = await fotoKucult(f, 2000); const r = await new ZXing.BrowserMultiFormatReader(ipuclari()).decodeFromImageUrl(u); kapat(r.getText()); }
+      catch(e){ alert("Fotoğrafta kod bulunamadı. Kare kodu yakından, net ve iyi ışıkta çekmeyi deneyin."); }
+    };
+    try{
+      await zxingYukle(); if(dur) return;
+      okuyucu = new ZXing.BrowserMultiFormatReader(ipuclari());
+      await okuyucu.decodeFromConstraints({video:{facingMode:"environment", width:{ideal:1920}, height:{ideal:1080}}}, video, r => { if(r) kapat(r.getText()); });
+    }catch(e){
+      if(!dur) d.querySelector("#t_yazi").innerHTML = "Kamera açılamadı. Telefon sorarsa <b>kameraya izin verin</b> ya da <b>Fotoğrafla dene</b>ye dokunun.";
+    }
+  });
+}
+
+/* ============ İLAÇ DOLABI (stok) ============ */
+function sktDurum(skt){
+  if(!skt) return {c:"e-fark", t:"", g:99999};
+  const f = gunFarki(bugunStr(), skt);
+  return f < 0 ? {c:"e-kirmizi", t:"tarihi geçti", g:f} : f <= 60 ? {c:"e-sari", t:f + " gün kaldı", g:f} : {c:"e-yesil", t:"", g:f};
+}
+function sktYaz(s){ if(!s) return "—"; const d = tarihObj(s); return AYLAR[d.getMonth()] + " " + d.getFullYear(); }
+function ekranDolap(){
+  let h = `<div class="acil"><a href="tel:112">🚑 112 Acil</a><a class="zehir" href="tel:114">☠️ 114 Zehir Danışma</a></div>`;
+  h += `<div class="satir" style="margin-bottom:12px"><button class="btn" onclick="karekodlaEkle()">📷 Karekod okut</button><button class="btn ikincil" onclick="stokFormu()">✍️ Elle ekle</button></div>`;
+  if(!V.stok.length) h += `<div class="bos">İlaç dolabınız boş.<br><br>Kutunun üstündeki <b>küçük kare kodu</b> okutarak ekleyin; ilacın adı ve son kullanma tarihi kendiliğinden gelir.</div>`;
+  else h += `<label class="alan"><input id="dolap_ara" type="search" placeholder="🔎 Dolapta ara" value="${esc(durum.ara||"")}" oninput="durum.ara=this.value;dolapListe()"></label><div id="dolap_liste">${dolapListeHTML()}</div>`;
+  h += `<p class="kucuk-yazi">Uygulama ilaç dozu önermez. Nasıl kullanılacağını doktorunuzdan, eczacınızdan ya da prospektüsten öğrenip ilacın “kullanım notu”na yazabilirsiniz. Acil durumda 112'yi, zehirlenme şüphesinde 114'ü arayın.</p>`;
+  return h;
+}
+function dolapListe(){ const y = document.getElementById("dolap_liste"); if(y) y.innerHTML = dolapListeHTML(); }
+function dolapListeHTML(){
+  const q = kucuk(durum.ara||"").trim();
+  const st = V.stok.filter(s => !q || kucuk(s.ad + " " + (s.etken||"") + " " + (s.yer||"") + " " + (s.not||"")).includes(q));
+  const g = s => sktDurum(s.skt).g;
+  const gecmisL = st.filter(s => g(s) < 0).sort((a,b) => g(a) - g(b));
+  const yakin = st.filter(s => g(s) >= 0 && g(s) <= 60).sort((a,b) => g(a) - g(b));
+  const diger = st.filter(s => g(s) > 60).sort((a,b) => a.ad.localeCompare(b.ad, "tr"));
+  let h = "";
+  if(gecmisL.length) h += `<h2>⚠️ Tarihi geçmiş — kullanmayın</h2>` + gecmisL.map(stokKarti).join("");
+  if(yakin.length) h += `<h2>⏳ 60 gün içinde tarihi dolacak</h2>` + yakin.map(stokKarti).join("");
+  if(diger.length) h += `<h2>✅ Kullanılabilir</h2>` + diger.map(stokKarti).join("");
+  return h || `<div class="bos">Aramaya uyan ilaç yok.</div>`;
+}
+function stokKarti(s){
+  const d = sktDurum(s.skt);
+  return `<div class="kart" onclick="stokFormu('${s.id}')">
+    <div class="baslik">💊 ${esc(s.ad)}</div>
+    ${s.etken ? `<div class="bilgi">${esc(s.etken)}</div>` : ""}
+    <div style="margin-top:6px"><span class="etiket ${d.c}">SKT: ${s.skt ? sktYaz(s.skt) : "girilmedi"}${d.t ? " · " + d.t : ""}</span><span class="etiket e-fark">${s.adet} kutu</span>${s.kime ? `<span class="etiket e-mavi">${esc(kisi(s.kime).ad)}</span>` : ""}</div>
+    ${s.yer ? `<div class="bilgi" style="margin-top:4px">📍 ${esc(s.yer)}</div>` : ""}
+    ${s.not ? `<div class="not">📝 ${esc(s.not)}</div>` : ""}
+    ${(s.fotolar||[]).length ? `<div class="kucuk-yazi" style="margin-top:4px">📷 ${s.fotolar.length} fotoğraf</div>` : ""}
+  </div>`;
+}
+async function karekodlaEkle(){
+  const t = await karekodOku(); if(!t) return;
+  const k = gs1Coz(t);
+  if(!k.barkod){ alert("Okunan kod bir ilaç karekodu değil. Kutunun üstündeki küçük kare kodu okutun."); return; }
+  const seriA = k.seri ? k.barkod + "|" + k.seri : "";
+  if(seriA){ const v = V.stok.find(s => (s.seriler||[]).includes(seriA)); if(v){ alert("Bu kutu zaten dolapta kayıtlı:\n" + v.ad); return; } }
+  let x = null; try{ x = (await ilacListesi()).barkod.get(k.barkod) || null; }catch(e){}
+  const ayni = V.stok.find(s => s.barkod === k.barkod && (s.skt||"") === (k.skt||"") && (s.parti||"") === (k.parti||""));
+  if(ayni){
+    ayni.adet += 1; if(seriA) (ayni.seriler = ayni.seriler || []).push(seriA);
+    kaydet(); ciz(); serit("✅ Dolaba eklendi", ayni.ad + " · artık " + ayni.adet + " kutu"); return;
+  }
+  stokFormu(null, {ad: x ? x[1] : "", etken: x ? x[2] : "", barkod:k.barkod, skt:k.skt||"", parti:k.parti||"", seriler: seriA ? [seriA] : [], okundu:true, bulunamadi:!x});
+}
+let _stokOn = null;
+function stokFormu(id, on){
+  const s = id ? V.stok.find(x => x.id === id) : Object.assign({adet:1, kime:""}, on||{});
+  _stokOn = on || null;
+  pencere(`<h3>${id ? "Dolaptaki ilaç" : "Dolaba ilaç ekle"}</h3>
+    ${on && on.okundu ? (on.bulunamadi ? `<div class="uyari">Karekod okundu${s.skt ? ", son kullanma tarihi alındı" : ""}; ama bu barkod Sağlık Bakanlığı listesinde yok. İlacın adını siz yazın.</div>` : `<div class="uyari yesil">✅ Karekod okundu. Bilgileri kontrol edip <b>Kaydet</b>'e dokunun.</div>`) : ""}
+    ${ilacAdAlani(s.ad)}
+    <div class="satir">${alan("f_skt","Son kullanma tarihi",s.skt,"date")}${alan("f_adet","Kaç kutu?",s.adet,"number","",'min="0" inputmode="numeric"')}</div>
+    <label class="alan">Kimin?<select id="f_kime"><option value="">Ortak (evin)</option>${V.kisiler.map(k => `<option value="${k.id}" ${s.kime === k.id ? "selected" : ""}>${esc(k.ad)}</option>`).join("")}</select></label>
+    ${alan("f_yer","Nerede duruyor? (isteğe bağlı)",s.yer,"text","Örnek: Mutfak üst dolap, mavi ilaç kutusu")}
+    ${alan("f_not","Kullanım notunuz (isteğe bağlı)",s.not,"textarea","Doktorun ya da eczacının söylediğini yazın. Örnek: Ateşte 1 tablet, en az 6 saat arayla. Uygulama kendisi doz önermez.")}
+    ${alan("f_parti","Parti numarası (isteğe bağlı)",s.parti,"text")}
+    ${fotoAlani(s.fotolar, "Fotoğraflar (kutu, prospektüs) — isteğe bağlı")}
+    <div class="satir"><button class="btn ikincil" onclick="kapat()">Vazgeç</button><button class="btn" onclick="stokKaydet('${id||""}')">Kaydet</button></div>
+    ${id ? `<div class="islemler"><button class="btn ikincil kucuk" onclick="stokAzalt('${id}')">➖ 1 kutu bitti</button><button class="btn tehlike kucuk" onclick="stokSil('${id}')">🗑️ Dolaptan çıkar</button></div>` : ""}`);
+  FORM_ILAC = {barkod:s.barkod||"", etken:s.etken||"", kilit: !!(on && on.okundu)}; etkenYaz();
+}
+function stokKaydet(id){
+  const ad = deg("f_ad"); if(!ad){ alert("Lütfen ilacın adını yazın."); return; }
+  const adet = Math.max(0, parseInt(deg("f_adet") || "1", 10) || 0);
+  const s = id ? V.stok.find(x => x.id === id) : {id:yeniId(), seriler:(_stokOn && _stokOn.seriler) || [], eklenme:bugunStr()};
+  const eskiFoto = s.fotolar || [];
+  Object.assign(s, {ad, barkod:FORM_ILAC.barkod||"", etken:FORM_ILAC.etken||"", skt:deg("f_skt"), adet, kime:document.getElementById("f_kime").value,
+    yer:deg("f_yer"), parti:deg("f_parti"), not:deg("f_not"), fotolar:FORM_FOTO.slice()});
+  eskiFoto.filter(f => !s.fotolar.includes(f)).forEach(f => fotoSilDB(f).catch(() => {}));
+  if(!id) V.stok.push(s);
+  kaydet(); kapat(); ciz();
+}
+function stokCikar(s){ (s.fotolar||[]).forEach(f => fotoSilDB(f).catch(() => {})); V.stok = V.stok.filter(x => x !== s); }
+function stokAzalt(id){
+  const s = V.stok.find(x => x.id === id);
+  s.adet = Math.max(0, s.adet - 1);
+  if(s.adet === 0 && confirm(s.ad + " bitti. Dolaptan çıkarılsın mı?")) stokCikar(s);
+  kaydet(); kapat(); ciz();
+}
+function stokSil(id){ const s = V.stok.find(x => x.id === id); if(!confirm(s.ad + " dolaptan çıkarılsın mı?")) return; stokCikar(s); kaydet(); kapat(); ciz(); }
+
+/* Reçetedeki / takipteki ilaç evde var mı? */
+function adAnahtar(ad){ return kucuk(String(ad||"").split(",")[0]).replace(/\s+/g, " ").trim(); }
+function stokKarsilastir(k){
+  const bugun = bugunStr(), saglam = s => !s.skt || gunFarki(bugun, s.skt) >= 0;
+  const tam = V.stok.filter(s => s.adet > 0 && ((k.barkod && s.barkod === k.barkod) || (adAnahtar(k.ad) && adAnahtar(s.ad) === adAnahtar(k.ad))));
+  if(tam.length){
+    const iyi = tam.filter(saglam);
+    if(iyi.length){
+      const kutu = iyi.reduce((t,s) => t + s.adet, 0), en = iyi.map(s => s.skt).filter(Boolean).sort()[0];
+      const yakin = en && gunFarki(bugun, en) <= 60;
+      return `<div class="durum-satir ${yakin ? "d-yakin" : "d-var"}">✅ Evde var: ${kutu} kutu${en ? " · son kullanma " + sktYaz(en) : ""}${yakin ? " (tarihi yaklaşıyor)" : ""}</div>`;
+    }
+    return `<div class="durum-satir d-gecmis">⚠️ Evde var ama son kullanma tarihi geçmiş (${tam.map(s => sktYaz(s.skt)).join(", ")}). Kullanmayın.</div>`;
+  }
+  const et = kucuk(k.etken).trim();
+  if(et){
+    const b = V.stok.filter(s => s.adet > 0 && kucuk(s.etken).trim() === et && saglam(s));
+    if(b.length) return `<div class="durum-satir d-benzer">ℹ️ Evde aynı etken maddeli başka bir ilaç var: ${b.map(s => esc(s.ad)).join(", ")}. Doz ya da biçimi farklı olabilir; kullanmadan önce eczacınıza sorun.</div>`;
+  }
+  return `<div class="durum-satir d-yok">🛒 Evde yok</div>`;
+}
+
+/* ============ REÇETELER ============ */
+function receteListesiHTML(kid){
+  const rs = V.receteler.filter(r => r.kid === kid).sort((a,b) => (b.tarih||"").localeCompare(a.tarih||""));
+  let h = `<button class="btn genis" onclick="receteFormu()" style="margin-bottom:12px">＋ Reçete ekle</button>`;
+  if(!rs.length) return h + `<div class="bos">Kayıtlı reçete yok.<br><br>Doktordan çıkınca reçeteyi buraya ekleyin: ilaçları tek dokunuşla takibe alır ve evde olup olmadığını söyler.</div>`;
+  rs.forEach(r => {
+    h += `<div class="kart"><div class="olay" style="cursor:pointer" onclick="receteFormu('${r.id}')"><div class="govde">
+      <div class="baslik">📋 Reçete · ${r.tarih ? tarihKisa(r.tarih) : "tarih yok"}</div>
+      ${r.doktor || r.hastane ? `<div class="bilgi">${esc([r.doktor, r.hastane].filter(Boolean).join(" · "))}</div>` : ""}
+      ${r.no ? `<div class="bilgi">Reçete no: ${esc(r.no)}</div>` : ""}
+      ${(r.fotolar||[]).length ? `<div class="kucuk-yazi">📷 ${r.fotolar.length} fotoğraf · görmek ya da düzenlemek için dokunun</div>` : ""}
+      </div><div class="ok">›</div></div>`;
+    (r.kalemler||[]).forEach((k, i) => {
+      const il = k.ilacId && V.ilaclar.find(x => x.id === k.ilacId);
+      h += `<div class="kalem"><div class="iad">💊 ${esc(k.ad)}</div>${k.kullanim ? `<div class="bilgi">${esc(k.kullanim)}</div>` : ""}${stokKarsilastir(k)}
+        <div style="margin-top:8px">${il ? `<span class="etiket e-yesil">✓ İlaç takibinde</span>` : `<button class="btn kucuk" onclick="takibeAl('${r.id}',${i})">➕ İlaç takibine al</button>`}</div></div>`;
+    });
+    h += `</div>`;
+  });
+  return h;
+}
+function takibeAl(rid, i){
+  const r = V.receteler.find(x => x.id === rid), k = r.kalemler[i];
+  const kaynak = "Reçete: " + (r.tarih ? tarihKisa(r.tarih) : "") + (r.doktor ? " · " + r.doktor : "");
+  ilacFormu(null, {kid:r.kid, ad:k.ad, barkod:k.barkod, etken:k.etken, not:[k.kullanim, kaynak].filter(Boolean).join("\n"), recete:rid, kalem:i});
+}
+let FORM_KALEM = [];
+function receteFormu(id){
+  const r = id ? V.receteler.find(x => x.id === id) : {kid:durum.kid, tarih:bugunStr(), kalemler:[]};
+  FORM_KALEM = (r.kalemler||[]).map(k => Object.assign({}, k));
+  pencere(`<h3>${id ? "Reçete" : "Yeni reçete"} · ${esc(kisi(r.kid).ad)}</h3>
+    ${fotoAlani(r.fotolar, "Reçetenin fotoğrafı (isteğe bağlı)")}
+    <div class="satir">${alan("f_tar","Tarih",r.tarih,"date")}${alan("f_no","Reçete no",r.no,"text","İsteğe bağlı")}</div>
+    ${alan("f_dok","Doktor",r.doktor,"text")}
+    ${alan("f_has","Hastane / bölüm",r.hastane,"text")}
+    <label class="alan">Reçetedeki ilaçlar</label><div id="f_kalemler"></div>
+    <div class="kart ek-kutu">
+      ${ilacAdAlani("", "Reçetedeki ilacın adını yazmaya başlayın, listeden seçin.")}
+      ${alan("f_kul","Nasıl kullanılacak? (isteğe bağlı)","","text","Örnek: Günde 2 kez 1 tablet, tok karnına")}
+      <div class="satir"><button type="button" class="btn ikincil" onclick="kalemEkle()">➕ Listeye ekle</button><button type="button" class="btn ikincil" onclick="kalemKarekod()">📷 Kutudan okut</button></div>
+    </div>
+    <div class="satir" style="margin-top:12px"><button class="btn ikincil" onclick="kapat()">Vazgeç</button><button class="btn" onclick="receteKaydet('${id||""}','${r.kid}')">Kaydet</button></div>
+    ${id ? `<div style="margin-top:12px"><button class="btn tehlike genis" onclick="receteSil('${id}')">🗑️ Reçeteyi sil</button></div>` : ""}`);
+  FORM_ILAC = {}; kalemleriCiz();
+}
+function kalemleriCiz(){
+  const y = document.getElementById("f_kalemler"); if(!y) return;
+  y.innerHTML = FORM_KALEM.length ? FORM_KALEM.map((k,i) => `<div class="kalem"><div class="satir"><div style="flex:1"><div class="iad">${esc(k.ad)}</div>${k.kullanim ? `<div class="bilgi">${esc(k.kullanim)}</div>` : ""}</div><button type="button" class="btn tehlike kucuk" style="flex:0 0 auto" aria-label="Çıkar" onclick="FORM_KALEM.splice(${i},1);kalemleriCiz()">✕</button></div></div>`).join("")
+    : `<div class="bos" style="padding:12px">Henüz ilaç eklenmedi. Aşağıdan ekleyin.</div>`;
+}
+function kalemEkle(){
+  const ad = deg("f_ad"); if(!ad){ alert("Önce ilacın adını yazın."); return; }
+  FORM_KALEM.push({ad, barkod:FORM_ILAC.barkod||"", etken:FORM_ILAC.etken||"", kullanim:deg("f_kul")});
+  document.getElementById("f_ad").value = ""; document.getElementById("f_kul").value = ""; document.getElementById("f_ara").innerHTML = "";
+  FORM_ILAC = {}; etkenYaz(); kalemleriCiz();
+}
+async function kalemKarekod(){
+  const t = await karekodOku(); if(!t) return;
+  const k = gs1Coz(t); if(!k.barkod){ alert("Okunan kod bir ilaç kodu değil."); return; }
+  let x = null; try{ x = (await ilacListesi()).barkod.get(k.barkod) || null; }catch(e){}
+  if(!x){ alert("Bu barkod Sağlık Bakanlığı listesinde bulunamadı; ilacın adını yazın."); return; }
+  document.getElementById("f_ad").value = x[1]; FORM_ILAC = {barkod:x[0], etken:x[2]}; etkenYaz();
+}
+function receteKaydet(id, kid){
+  if(deg("f_ad") && confirm("Yazdığınız ilaç (" + deg("f_ad") + ") henüz listeye eklenmedi. Eklensin mi?")) kalemEkle();
+  if(!FORM_KALEM.length && !FORM_FOTO.length){ alert("Reçeteye en az bir ilaç ya da fotoğraf ekleyin."); return; }
+  const r = id ? V.receteler.find(x => x.id === id) : {id:yeniId(), kid};
+  const eskiFoto = r.fotolar || [];
+  Object.assign(r, {tarih:deg("f_tar"), no:deg("f_no"), doktor:deg("f_dok"), hastane:deg("f_has"), kalemler:FORM_KALEM.slice(), fotolar:FORM_FOTO.slice()});
+  eskiFoto.filter(f => !r.fotolar.includes(f)).forEach(f => fotoSilDB(f).catch(() => {}));
+  if(!id) V.receteler.push(r);
+  kaydet(); kapat(); if(durum.ekran === "kisi") durum.sekme = "recete"; ciz();
+}
+function receteSil(id){
+  const r = V.receteler.find(x => x.id === id); if(!confirm("Bu reçete silinsin mi?")) return;
+  (r.fotolar||[]).forEach(f => fotoSilDB(f).catch(() => {}));
+  V.receteler = V.receteler.filter(x => x !== r); kaydet(); kapat(); ciz();
+}
+function listeBilgisi(){
+  ilacListesi().then(L => { const y = document.getElementById("liste_bilgi"); if(y) y.textContent = "İlaç listesi: Sağlık Bakanlığı (TİTCK) Ruhsatlı Beşeri Tıbbi Ürünler Listesi, " + tarihKisa(L.tarih) + " · " + L.liste.length.toLocaleString("tr") + " ilaç."; }).catch(() => {});
+}
+
+/* ============ TELEFONA KURMA YARDIMI ============ */
+let _kurOlay = null;
+window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); _kurOlay = e; if(durum.ekran === "bugun" || durum.ekran === "ayarlar") ciz(); });
+window.addEventListener("appinstalled", () => { _kurOlay = null; ciz(); });
+const IOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+function kuruluMu(){ return window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true; }
+function kurBandi(){
+  if(kuruluMu() || V.ayar.kurGizle) return "";
+  return `<div class="kur-bant"><div style="flex:1"><b>📲 BEKAPSAĞLIK'ı telefonuna kur</b><div>Simgesiyle açılsın, internetsiz çalışsın.</div></div>
+    <button class="btn kucuk" onclick="kurulumYardim()">Nasıl?</button><button class="kapat-x" aria-label="Kapat" onclick="V.ayar.kurGizle=1;kaydet();ciz()">✕</button></div>`;
+}
+async function kurulumYardim(){
+  if(_kurOlay){ _kurOlay.prompt(); try{ await _kurOlay.userChoice; }catch(e){} _kurOlay = null; ciz(); return; }
+  const ua = navigator.userAgent, safariDisi = IOS && /CriOS|FxiOS|EdgiOS|OPiOS|GSA\//.test(ua);
+  const ios = `<ol class="adimlar">
+      ${safariDisi ? `<li><b>Bu sayfayı Safari'de açın.</b> Kurulum yalnız Safari'den yapılır (pusula simgeli uygulama). Adresi kopyalayıp Safari'ye yapıştırın.</li>` : ""}
+      <li>Ekranın altındaki <b>Paylaş</b> düğmesine dokunun <span class="ikon-kutu">⬆️</span> (içinden yukarı ok çıkan kutu). Göremiyorsanız sayfayı biraz yukarı kaydırın.</li>
+      <li>Açılan listeyi yukarı kaydırın, <b>“Ana Ekrana Ekle”</b> <span class="ikon-kutu">➕</span> yazısına dokunun.</li>
+      <li>Sağ üstteki <b>“Ekle”</b>ye dokunun.</li>
+      <li>Ana ekranda çıkan yeşil <b>BEKAPSAĞLIK</b> simgesinden açın.</li></ol>`;
+  const android = `<ol class="adimlar">
+      <li>Sağ üstteki <b>⋮</b> (üç nokta) menüsüne dokunun.</li>
+      <li><b>“Uygulamayı yükle”</b> ya da <b>“Ana ekrana ekle”</b>ye dokunun, sonra <b>“Yükle”</b>.</li>
+      <li>Bir dakika içinde ana ekranda yeşil <b>BEKAPSAĞLIK</b> simgesi çıkar; oradan açın.</li></ol>
+      <p class="bilgi">WhatsApp'ın içinde açtıysanız önce sağ üstteki ⋮ menüsünden <b>“Chrome'da aç”</b>ı seçin.</p>`;
+  pencere(`<h3>📲 Telefona kurma</h3>${IOS ? ios : android}<button class="btn genis" onclick="kapat()">Anladım</button>`);
+}
 /* ============ AYARLAR ============ */
 function ekranAyarlar(){
   const izin = !("Notification" in window) ? "yok" : Notification.permission;
@@ -709,33 +1139,38 @@ function ekranAyarlar(){
     <input type="file" id="yedek-dosya" accept=".json,application/json" hidden onchange="yedekYukle(this)">
     ${V.ayar.sonYedek ? `<p class="kucuk-yazi">Son yedek: ${tarihKisa(V.ayar.sonYedek)}</p>` : ""}
   </div>
-  ${!kurulu ? `<div class="kart"><div class="baslik">📱 Ana ekrana ekle</div>
-    <p class="bilgi">${ios ? "Safari'de alttaki <b>Paylaş</b> (kutudan çıkan ok) düğmesine, sonra <b>“Ana Ekrana Ekle”</b>ye dokunun." :
-      "Chrome'da sağ üstteki <b>⋮</b> menüsüne, sonra <b>“Ana ekrana ekle”</b> ya da <b>“Uygulamayı yükle”</b>ye dokunun."}
-    Böylece BEKAPSAĞLIK diğer uygulamalar gibi simgesiyle açılır ve internetsiz çalışır.</p></div>` : ""}
+  ${!kurulu ? `<div class="kart"><div class="baslik">📱 Telefona kur</div>
+    <p class="bilgi">BEKAPSAĞLIK'ı ana ekrana eklerseniz diğer uygulamalar gibi simgesiyle açılır ve internetsiz çalışır.</p>
+    <button class="btn genis" onclick="kurulumYardim()">${_kurOlay ? "📲 Şimdi yükle" : "📲 Nasıl kurulur?"}</button></div>` : ""}
   <div class="kart"><div class="baslik">ℹ️ Hakkında</div>
-    <p class="bilgi">BEKAPSAĞLIK · ${V.kisiler.length} kişi · ${V.ilaclar.length} ilaç · ${V.randevular.length} randevu · ${V.tahliller.length} tahlil</p>
+    <p class="bilgi">BEKAPSAĞLIK · ${V.kisiler.length} kişi · ${V.ilaclar.length} ilaç · ${V.randevular.length} randevu · ${V.tahliller.length} tahlil · ${V.receteler.length} reçete · dolapta ${V.stok.length} ilaç</p>
+    <p class="bilgi" id="liste_bilgi"></p>
     <p class="bilgi">Bu uygulama hiçbir yerden veri çekmez ve hiçbir yere veri göndermez. Tıbbi tavsiye vermez; ilaç ve tedavi konusunda her zaman doktorunuza danışın.</p>
     <button class="btn tehlike kucuk" onclick="hepsiniSil()">Bütün bilgileri sil</button></div>`;
 }
 function izinIste(){ Notification.requestPermission().then(() => ciz()); }
-function yedekAl(){
+async function yedekAl(){
   V.ayar.sonYedek = bugunStr(); kaydet();
-  const blob = new Blob([JSON.stringify(V, null, 1)], {type:"application/json"});
+  let fotolar = {}; try{ fotolar = await fotoHepsi(); }catch(e){}
+  const blob = new Blob([JSON.stringify(Object.assign({}, V, {fotolar}))], {type:"application/json"});
   const ad = "bekapsaglik-yedek-" + bugunStr() + ".json";
   try{ const f = new File([blob], ad, {type:"application/json"});
-    if(navigator.canShare && navigator.canShare({files:[f]})){ navigator.share({files:[f], title:ad}).catch(()=>{}); ciz(); return; } }catch(e){}
+    if(navigator.canShare && navigator.canShare({files:[f]})){ await navigator.share({files:[f], title:ad}); ciz(); return; } }catch(e){ if(e && e.name === "AbortError"){ ciz(); return; } }
   const u = URL.createObjectURL(blob), a = document.createElement("a"); a.href = u; a.download = ad; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(u), 60000);
   ciz();
 }
 function yedekYukle(inp){
   const f = inp.files[0]; if(!f) return;
   const r = new FileReader();
-  r.onload = () => {
+  r.onload = async () => {
     try{
       const d = JSON.parse(r.result);
       if(!Array.isArray(d.kisiler)) throw 0;
       if(!confirm(`Yedekte ${d.kisiler.length} kişi var. Şu anki bilgilerin YERİNE yüklensin mi?`)) return;
+      const fotolar = d.fotolar || {}; delete d.fotolar;
+      await fotoHepsiniSil();
+      for(const k of Object.keys(fotolar)){ try{ await fotoKoy(k, fotolar[k]); }catch(e){} }
       V = Object.assign(bos(), d); kaydet(); alert("Yedek yüklendi."); gecmis.length = 0; durum = {ekran:"bugun"}; ciz();
     }catch(e){ alert("Bu dosya BEKAPSAĞLIK yedeği değil."); }
   };
@@ -744,11 +1179,12 @@ function yedekYukle(inp){
 function hepsiniSil(){
   if(!confirm("Bütün kişiler, ilaçlar, randevular ve tahliller silinecek. Emin misiniz?")) return;
   if(!confirm("Son kez soruyorum: geri alınamaz. Silinsin mi?")) return;
-  V = bos(); kaydet(); gecmis.length = 0; durum = {ekran:"bugun"}; ciz();
+  V = bos(); kaydet(); fotoHepsiniSil(); gecmis.length = 0; durum = {ekran:"bugun"}; ciz();
 }
 
 /* ============ BAŞLAT ============ */
 ciz();
+fotoTemizle();
 kontrol();
 setInterval(() => { kontrol(); }, 30000);
 let sonGun = bugunStr();

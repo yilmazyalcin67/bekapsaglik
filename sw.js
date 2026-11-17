@@ -1,6 +1,6 @@
 // BEKAPSAĞLIK — internetsiz çalışma için önbellek. Hiçbir veri dışarı gönderilmez.
-const KASA = "bekapsaglik-v1";
-const DOSYALAR = ["./", "./index.html", "./manifest.json", "./ikon-180.png", "./ikon-192.png", "./ikon-512.png", "./ikon-512-maskable.png"];
+const KASA = "bekapsaglik-v2";
+const DOSYALAR = ["./", "./index.html", "./manifest.json", "./ikon-180.png", "./ikon-192.png", "./ikon-512.png", "./ikon-512-maskable.png", "./zxing.min.js", "./ilac_listesi.json"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(KASA).then(c => c.addAll(DOSYALAR)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", e => {
   e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== KASA).map(k => caches.delete(k)))).then(() => self.clients.claim()));
