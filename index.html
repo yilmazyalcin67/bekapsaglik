@@ -168,6 +168,9 @@ body.karsilama-modu{padding-bottom:0;background:linear-gradient(180deg,#0f766e 0
 .k-guven{color:var(--soluk);font-size:14px;margin:6px 8px 14px}
 .k-devam{border:0;background:none;color:var(--ana);font-size:15px;text-decoration:underline;padding:10px}
 .kart-dugme{margin-top:10px;padding-top:10px;border-top:1px solid var(--cizgi)}
+.isik-btn{position:absolute;right:14px;top:calc(14px + env(safe-area-inset-top));border:0;border-radius:999px;padding:10px 14px;font-size:16px;font-weight:700;background:rgba(15,23,42,.75);color:#fff}
+.isik-btn.on{background:#facc15;color:#111}
+.sayac{position:absolute;left:14px;top:calc(14px + env(safe-area-inset-top));border-radius:999px;padding:10px 14px;font-size:16px;font-weight:800;background:#15803d;color:#fff}
 </style>
 </head>
 <body>
@@ -858,11 +861,17 @@ function ilacSec(b){
 function etkenYaz(){ const y = document.getElementById("f_etken"); if(y) y.textContent = FORM_ILAC.etken ? "Etken madde: " + FORM_ILAC.etken : ""; }
 
 /* ============ KAREKOD (İlaç Takip Sistemi kare kodu) ============ */
+function sktGecerli(s){ if(!/^\d{6}$/.test(s)) return false; const a = +s.slice(2,4), g = +s.slice(4,6); return a >= 1 && a <= 12 && g <= 31; }
 function gs1Coz(t){
-  t = String(t||"").replace(/^\](d2|C1|Q3)/, "").replace(/^\u001d/, "");
+  // ZXing-C++ ayırıcıyı "<GS>" yazısı olarak verebilir; gerçek ayırıcıya çevir
+  t = String(t||"").trim().replace(/<GS>/gi, "\u001d").replace(/^\](d2|C1|Q3|e0)/, "").replace(/^\u001d/, "");
   const GS = "\u001d", r = {};
-  if(/^\d{8}$|^\d{13}$/.test(t)){ r.barkod = t; return r; }
-  if(t.includes(GS)){
+  if(/^\d{8}$|^\d{12,13}$/.test(t)){ r.barkod = t.length === 12 ? "0" + t : t; return r; }
+  if(/^\(\d{2,4}\)/.test(t)){ // okunur biçim: (01)0869…(21)…(17)…(10)…
+    const re = /\((\d{2,4})\)([^(]*)/g; let m;
+    while((m = re.exec(t))){ const v = m[2].replace(/\u001d/g, "").trim();
+      if(m[1] === "01") r.gtin = v; else if(m[1] === "17") r.skt = v; else if(m[1] === "10") r.parti = v; else if(m[1] === "21") r.seri = v; }
+  } else if(t.includes(GS)){
     let i = 0;
     while(i < t.length){
       const ai = t.substr(i, 2); i += 2;
@@ -871,18 +880,27 @@ function gs1Coz(t){
       else if(ai === "10" || ai === "21"){ let j = t.indexOf(GS, i); if(j < 0) j = t.length; r[ai === "10" ? "parti" : "seri"] = t.slice(i, j); i = j + 1; }
       else break;
     }
-  } else {
+  } else if(/^01\d{14}/.test(t)){
+    // ayraçsız: 01 + GTIN, sonra 21/17/10 sırası değişebilir; geçerli tarihli ilk bölünmeyi seç
+    r.gtin = t.substr(2, 14); const g = t.slice(16);
     let m;
-    if((m = t.match(/^01(\d{14})21(.+?)17(\d{6})10(.+)$/))) Object.assign(r, {gtin:m[1], seri:m[2], skt:m[3], parti:m[4]});
-    else if((m = t.match(/^01(\d{14})17(\d{6})10(.+?)21(.+)$/))) Object.assign(r, {gtin:m[1], skt:m[2], parti:m[3], seri:m[4]});
-    else if((m = t.match(/^01(\d{14})17(\d{6})10(.+)$/))) Object.assign(r, {gtin:m[1], skt:m[2], parti:m[3]});
-    else if((m = t.match(/^01(\d{14})/))) r.gtin = m[1];
+    if(g.startsWith("21")){
+      for(let k = 3; k < g.length - 7; k++){
+        if(g.substr(k, 2) === "17" && sktGecerli(g.substr(k + 2, 6)) && (k + 8 === g.length || g.substr(k + 8, 2) === "10")){
+          r.seri = g.slice(2, k); r.skt = g.substr(k + 2, 6); if(k + 8 < g.length) r.parti = g.slice(k + 10); break;
+        }
+      }
+    } else if((m = g.match(/^17(\d{6})10(.*)$/)) && sktGecerli(m[1])){
+      r.skt = m[1];
+      const rest = m[2], j = rest.lastIndexOf("21");
+      if(j > 0){ r.parti = rest.slice(0, j); r.seri = rest.slice(j + 2); } else r.parti = rest;
+    } else if((m = g.match(/^17(\d{6})/)) && sktGecerli(m[1])) r.skt = m[1];
   }
   if(r.gtin) r.barkod = r.gtin.replace(/^0/, "");
-  if(r.skt && /^\d{6}$/.test(r.skt)){
+  if(r.skt && sktGecerli(r.skt)){
     const y = 2000 + +r.skt.slice(0,2), a = +r.skt.slice(2,4); let g = +r.skt.slice(4,6);
-    if(a < 1 || a > 12) delete r.skt;
-    else { if(g === 0) g = new Date(y, a, 0).getDate(); r.skt = y + "-" + iki(a) + "-" + iki(g); }
+    if(g === 0) g = new Date(y, a, 0).getDate();
+    r.skt = y + "-" + iki(a) + "-" + iki(g);
   } else delete r.skt;
   return r;
 }
@@ -895,7 +913,7 @@ async function yerliOkuyucu(){
   try{
     if("BarcodeDetector" in window){
       const f = await BarcodeDetector.getSupportedFormats();
-      if(f.includes("data_matrix")) _yerli = new BarcodeDetector({formats:["data_matrix","ean_13","qr_code"].filter(x => f.includes(x))});
+      if(f.includes("data_matrix")) _yerli = new BarcodeDetector({formats:["data_matrix","ean_13","ean_8","upc_a","code_128","qr_code"].filter(x => f.includes(x))});
     }
   }catch(e){ _yerli = null; }
   return _yerli;
@@ -911,14 +929,13 @@ function wasmYukle(){
     s.onerror = no; document.head.appendChild(s);
   }).catch(e => { _wasm = null; throw e; }));
 }
-const WASM_AYAR = {formats:["DataMatrix","EAN13","QRCode"], tryHarder:true, tryRotate:true, tryInvert:true, tryDownscale:true, maxNumberOfSymbols:1};
-async function wasmOku(girdi, ek){
+const WASM_AYAR = {formats:["DataMatrix","EAN13","EAN8","UPCA","Code128","QRCode"], tryHarder:true, tryRotate:true, tryInvert:true, tryDownscale:true, maxNumberOfSymbols:1};
+async function wasmOku(girdi){
   await wasmYukle();
-  const r = await ZXingWASM.readBarcodes(girdi, Object.assign({}, WASM_AYAR, ek||{}));
+  const r = await ZXingWASM.readBarcodes(girdi, WASM_AYAR);
   const iyi = (r||[]).find(x => x.isValid !== false && x.text);
   return iyi ? iyi.text : null;
 }
-/* Kaynağın (video ya da resim) ortasından kare bir parça kesip büyütür */
 function ortaKes(kaynak, gen, yuk, oran, hedef){
   const k = Math.min(gen, yuk) * oran, x = (gen - k) / 2, y = (yuk - k) / 2;
   const c = document.createElement("canvas"); c.width = c.height = hedef;
@@ -930,66 +947,88 @@ async function resimdenOku(dosya){
   const yerli = await yerliOkuyucu();
   if(yerli){ try{ const bmp = await createImageBitmap(dosya); const r = await yerli.detect(bmp); if(r.length) return r[0].rawValue; }catch(e){} }
   try{ const t = await wasmOku(dosya); if(t) return t; }catch(e){}
-  try{ // yakın plan için ortadan kesip bir daha dene
+  try{
     const bmp = await createImageBitmap(dosya);
     for(const oran of [0.5, 0.3]){ const t = await wasmOku(ortaKes(bmp, bmp.width, bmp.height, oran, 1200)); if(t) return t; }
   }catch(e){}
   return null;
 }
-function karekodOku(){
+/* Kamera ekranı.
+   Tek okuma: karekodOku() → okunan yazı (ya da null).
+   Sürekli okuma: karekodOku({isle: async yazi => "ekranda gösterilecek mesaj"}) → "Bitti"ye basılınca null döner. */
+function karekodOku(sec){
+  sec = sec || {};
   return new Promise(async bitti => {
+    const surekli = !!sec.isle;
     const d = document.createElement("div"); d.className = "tarayici";
-    d.innerHTML = `<div class="video-alan"><video playsinline muted autoplay></video><div class="cerceve"></div></div>
-      <div class="alt-bar"><div id="t_yazi" style="margin-bottom:10px">İlaç kutusundaki <b>küçük kare kodu</b> çerçevenin içine getirin.<br><span class="kucuk-yazi" style="color:#cbd5e1">Kodu yavaşça yaklaştırıp uzaklaştırın; net görününce kendiliğinden okur.</span></div>
-      <div class="satir"><button class="btn ikincil" id="t_foto">📷 Fotoğraf çek</button><button class="btn tehlike" id="t_iptal">Vazgeç</button></div>
+    d.innerHTML = `<div class="video-alan"><video playsinline muted autoplay></video><div class="cerceve"></div>
+        <button class="isik-btn" id="t_isik" hidden>🔦 Işık</button>
+        ${surekli ? `<div class="sayac" id="t_sayac">0 kutu eklendi</div>` : ""}</div>
+      <div class="alt-bar"><div id="t_yazi" style="margin-bottom:10px">${surekli ? "Kutuları <b>sırayla</b> okutun; her kutu kendiliğinden eklenir." : "İlaç kutusundaki <b>küçük kare kodu</b> çerçevenin içine getirin."}<br><span class="kucuk-yazi" style="color:#cbd5e1">Kodu yavaşça yaklaştırıp uzaklaştırın; parlıyorsa kutuyu biraz eğin.</span></div>
+      <div class="satir"><button class="btn ikincil" id="t_foto">📷 Fotoğraf çek</button><button class="btn ${surekli ? "" : "tehlike"}" id="t_iptal">${surekli ? "✓ Bitti" : "Vazgeç"}</button></div>
       <input type="file" accept="image/*" capture="environment" id="t_in" hidden></div>`;
     document.body.appendChild(d);
-    const video = d.querySelector("video"); let akis = null, dur = false, zam = null;
+    const video = d.querySelector("video"), yazi = d.querySelector("#t_yazi");
+    let akis = null, dur = false, zam = null, bekle = 0, sonYazi = "", sonZaman = 0, sayi = 0;
     const kapat = sonuc => {
       if(dur) return; dur = true; clearTimeout(zam);
       if(akis) akis.getTracks().forEach(t => t.stop());
-      d.remove(); if(sonuc && navigator.vibrate) navigator.vibrate(120); bitti(sonuc);
+      d.remove(); bitti(sonuc);
+    };
+    const bulundu = async t => {
+      if(navigator.vibrate) navigator.vibrate(120);
+      if(!surekli){ kapat(t); return; }
+      const simdi = Date.now();
+      if(t === sonYazi && simdi - sonZaman < 4000) return;   // aynı kutu hâlâ kameranın önünde
+      sonYazi = t; sonZaman = simdi; bekle = simdi + 1200;   // bir sonraki kutu için kısa ara
+      let m = ""; try{ m = await sec.isle(t); }catch(e){ m = "Bir hata oldu, tekrar okutun."; }
+      if(m && m.startsWith("✅")){ sayi++; const s = d.querySelector("#t_sayac"); if(s) s.textContent = sayi + " kutu eklendi"; }
+      yazi.innerHTML = m + `<br><span class="kucuk-yazi" style="color:#cbd5e1">Sıradaki kutuyu okutun ya da <b>Bitti</b>'ye dokunun.</span>`;
     };
     d.querySelector("#t_iptal").onclick = () => kapat(null);
     const inp = d.querySelector("#t_in");
     d.querySelector("#t_foto").onclick = () => inp.click();
     inp.onchange = async () => {
       const f = inp.files[0]; inp.value = ""; if(!f) return;
-      d.querySelector("#t_yazi").innerHTML = "Fotoğraf inceleniyor…";
+      yazi.innerHTML = "Fotoğraf inceleniyor…";
       let t = null; try{ t = await resimdenOku(f); }catch(e){}
-      if(t) kapat(t);
-      else d.querySelector("#t_yazi").innerHTML = "<b>Fotoğrafta kod bulunamadı.</b><br>Kare kodu ortalayıp yakından, net ve iyi ışıkta tekrar çekin.";
+      if(t) bulundu(t);
+      else yazi.innerHTML = "<b>Fotoğrafta kod bulunamadı.</b><br>Kare kodu ortalayıp yakından, net ve iyi ışıkta tekrar çekin.";
     };
-    wasmYukle().catch(() => {}); // arka planda hazırlansın
+    wasmYukle().catch(() => {});
     try{
       akis = await navigator.mediaDevices.getUserMedia({audio:false, video:{facingMode:{ideal:"environment"}, width:{ideal:1920}, height:{ideal:1080}}});
       if(dur){ akis.getTracks().forEach(t => t.stop()); return; }
       video.srcObject = akis; await video.play().catch(() => {});
-      try{ // sürekli odak + biraz yakınlaştırma (küçük kodlar için)
+      try{
         const iz = akis.getVideoTracks()[0], cap = iz.getCapabilities ? iz.getCapabilities() : {}, adv = [];
         if(cap.focusMode && cap.focusMode.includes("continuous")) adv.push({focusMode:"continuous"});
         if(cap.zoom && cap.zoom.max >= 1.5) adv.push({zoom: Math.min(cap.zoom.max, 2)});
         if(adv.length) await iz.applyConstraints({advanced:adv});
+        if(cap.torch){
+          const b = d.querySelector("#t_isik"); let acik = false; b.hidden = false;
+          b.onclick = async () => { acik = !acik; try{ await iz.applyConstraints({advanced:[{torch:acik}]}); b.classList.toggle("on", acik); }catch(e){} };
+        }
       }catch(e){}
       const yerli = await yerliOkuyucu();
       let sira = 0;
       const tara = async () => {
         if(dur) return;
-        if(video.readyState >= 2 && video.videoWidth){
+        if(Date.now() >= bekle && video.readyState >= 2 && video.videoWidth){
           let t = null;
           try{
-            // Android: telefonun kendi okuyucusu; her 4 denemeden birinde (ve iPhone'da hep) ZXing de dener
-            if(yerli && sira % 4 !== 3){ const r = await yerli.detect(video); if(r.length) t = r[0].rawValue; }
-            else { const oran = [0.6, 0.45, 0.8][sira % 3]; t = await wasmOku(ortaKes(video, video.videoWidth, video.videoHeight, oran, 800)); }
+            // Android: telefonun kendi okuyucusu; her 3 denemeden birinde (iPhone'da hep) ZXing de dener
+            if(yerli && sira % 3 !== 2){ const r = await yerli.detect(video); if(r.length) t = r[0].rawValue; }
+            else { const oran = [0.6, 0.4, 0.85][Math.floor(sira / 3) % 3]; t = await wasmOku(ortaKes(video, video.videoWidth, video.videoHeight, oran, 900)); }
           }catch(e){}
           sira++;
-          if(t){ kapat(t); return; }
+          if(t){ await bulundu(t); if(dur) return; }
         }
-        zam = setTimeout(tara, 120);
+        zam = setTimeout(tara, 100);
       };
       tara();
     }catch(e){
-      if(!dur) d.querySelector("#t_yazi").innerHTML = "Kamera açılamadı. Telefon sorarsa <b>kameraya izin verin</b> ya da <b>Fotoğraf çek</b>e dokunun.";
+      if(!dur) yazi.innerHTML = "Kamera açılamadı. Telefon sorarsa <b>kameraya izin verin</b> ya da <b>Fotoğraf çek</b>e dokunun.";
     }
   });
 }
@@ -1040,19 +1079,36 @@ function stokKarti(s){
     </div>
   </div>`;
 }
+/* Dolaba karekodla ekleme: kutular sırayla okutulur, her kutu kendiliğinden eklenir */
 async function karekodlaEkle(){
-  const t = await karekodOku(); if(!t) return;
+  let eklenen = 0;
+  await karekodOku({isle: async t => {
+    const m = await stokKutuEkle(t);
+    if(m.startsWith("✅")) eklenen++;
+    return m;
+  }});
+  ciz();
+  if(eklenen) serit("✅ Dolaba " + eklenen + " kutu eklendi", "Adı bulunamayan ya da tarihi okunamayan kutu varsa üstüne dokunup düzeltin.");
+}
+async function stokKutuEkle(t){
   const k = gs1Coz(t);
-  if(!k.barkod){ alert("Okunan kod bir ilaç karekodu değil. Kutunun üstündeki küçük kare kodu okutun."); return; }
+  if(!k.barkod) return "⚠️ Bu bir ilaç karekodu değil. Kutunun üstündeki <b>küçük kare kodu</b> okutun.";
   const seriA = k.seri ? k.barkod + "|" + k.seri : "";
-  if(seriA){ const v = V.stok.find(s => (s.seriler||[]).includes(seriA)); if(v){ alert("Bu kutu zaten dolapta kayıtlı:\n" + v.ad); return; } }
+  if(seriA){ const v = V.stok.find(s => (s.seriler||[]).includes(seriA)); if(v) return "ℹ️ Bu kutu zaten kayıtlı: <b>" + esc(v.ad) + "</b>"; }
   let x = null; try{ x = (await ilacListesi()).barkod.get(k.barkod) || null; }catch(e){}
-  const ayni = V.stok.find(s => s.barkod === k.barkod && (s.skt||"") === (k.skt||"") && (s.parti||"") === (k.parti||""));
-  if(ayni){
-    ayni.adet += 1; if(seriA) (ayni.seriler = ayni.seriler || []).push(seriA);
-    kaydet(); ciz(); serit("✅ Dolaba eklendi", ayni.ad + " · artık " + ayni.adet + " kutu"); return;
+  const ayni = V.stok.find(s => s.barkod === k.barkod && (s.skt||"") === (k.skt||""));
+  let s;
+  if(ayni){ s = ayni; s.adet += 1; if(seriA) (s.seriler = s.seriler || []).push(seriA); }
+  else {
+    s = {id:yeniId(), ad: x ? x[1] : "Adı bulunamadı · barkod " + k.barkod, barkod:k.barkod, etken: x ? x[2] : "", skt:k.skt||"", parti:k.parti||"",
+         adet:1, kime:"", yer:"", not:"", fotolar:[], seriler: seriA ? [seriA] : [], eklenme:bugunStr()};
+    V.stok.push(s);
   }
-  stokFormu(null, {ad: x ? x[1] : "", etken: x ? x[2] : "", barkod:k.barkod, skt:k.skt||"", parti:k.parti||"", seriler: seriA ? [seriA] : [], okundu:true, bulunamadi:!x});
+  kaydet();
+  let m = "✅ <b>" + esc(s.ad) + "</b><br>SKT: " + (s.skt ? sktYaz(s.skt) : "kodda yok") + " · dolapta " + s.adet + " kutu";
+  if(!x) m += "<br>⚠️ Adı listede yok; sonra üstüne dokunup adını yazın.";
+  else if(!k.skt) m += "<br>⚠️ Son kullanma tarihi kodda yok; sonra düzenleyip girin.";
+  return m;
 }
 let _stokOn = null;
 function stokFormu(id, on){
