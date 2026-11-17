@@ -167,6 +167,7 @@ body.karsilama-modu{padding-bottom:0;background:linear-gradient(180deg,#0f766e 0
 .k-btn.on{background:var(--ana);color:#fff}
 .k-guven{color:var(--soluk);font-size:14px;margin:6px 8px 14px}
 .k-devam{border:0;background:none;color:var(--ana);font-size:15px;text-decoration:underline;padding:10px}
+.kart-dugme{margin-top:10px;padding-top:10px;border-top:1px solid var(--cizgi)}
 </style>
 </head>
 <body>
@@ -1002,6 +1003,7 @@ function sktYaz(s){ if(!s) return "—"; const d = tarihObj(s); return AYLAR[d.g
 function ekranDolap(){
   let h = `<div class="acil"><a href="tel:112">🚑 112 Acil</a><a class="zehir" href="tel:114">☠️ 114 Zehir Danışma</a></div>`;
   h += `<div class="satir" style="margin-bottom:12px"><button class="btn" onclick="karekodlaEkle()">📷 Karekod okut</button><button class="btn ikincil" onclick="stokFormu()">✍️ Elle ekle</button></div>`;
+  if(V.stok.length) h += `<button class="btn ikincil genis" style="margin-bottom:12px" onclick="dolabiPaylas()">📤 Dolabı paylaş</button>`;
   if(!V.stok.length) h += `<div class="bos">İlaç dolabınız boş.<br><br>Kutunun üstündeki <b>küçük kare kodu</b> okutarak ekleyin; ilacın adı ve son kullanma tarihi kendiliğinden gelir.</div>`;
   else h += `<label class="alan"><input id="dolap_ara" type="search" placeholder="🔎 Dolapta ara" value="${esc(durum.ara||"")}" oninput="durum.ara=this.value;dolapListe()"></label><div id="dolap_liste">${dolapListeHTML()}</div>`;
   h += `<p class="kucuk-yazi">Uygulama ilaç dozu önermez. Nasıl kullanılacağını doktorunuzdan, eczacınızdan ya da prospektüsten öğrenip ilacın “kullanım notu”na yazabilirsiniz. Acil durumda 112'yi, zehirlenme şüphesinde 114'ü arayın.</p>`;
@@ -1030,6 +1032,11 @@ function stokKarti(s){
     ${s.yer ? `<div class="bilgi" style="margin-top:4px">📍 ${esc(s.yer)}</div>` : ""}
     ${s.not ? `<div class="not">📝 ${esc(s.not)}</div>` : ""}
     ${(s.fotolar||[]).length ? `<div class="kucuk-yazi" style="margin-top:4px">📷 ${s.fotolar.length} fotoğraf</div>` : ""}
+    <div class="islemler kart-dugme" onclick="event.stopPropagation()">
+      <button class="btn ikincil kucuk" onclick="stokAzalt('${s.id}')">➖ 1 kutu azalt</button>
+      <button class="btn ikincil kucuk" onclick="stokFormu('${s.id}')">✏️ Düzenle</button>
+      <button class="btn tehlike kucuk" onclick="stokSil('${s.id}')">🗑️ Sil</button>
+    </div>
   </div>`;
 }
 async function karekodlaEkle(){
@@ -1060,7 +1067,7 @@ function stokFormu(id, on){
     ${alan("f_parti","Parti numarası (isteğe bağlı)",s.parti,"text")}
     ${fotoAlani(s.fotolar, "Fotoğraflar (kutu, prospektüs) — isteğe bağlı")}
     <div class="satir"><button class="btn ikincil" onclick="kapat()">Vazgeç</button><button class="btn" onclick="stokKaydet('${id||""}')">Kaydet</button></div>
-    ${id ? `<div class="islemler"><button class="btn ikincil kucuk" onclick="stokAzalt('${id}')">➖ 1 kutu bitti</button><button class="btn tehlike kucuk" onclick="stokSil('${id}')">🗑️ Dolaptan çıkar</button></div>` : ""}`);
+    ${id ? `<div class="islemler"><button class="btn ikincil kucuk" onclick="stokAzalt('${id}')">➖ 1 kutu azalt</button><button class="btn tehlike kucuk" onclick="stokSil('${id}')">🗑️ Dolaptan çıkar</button></div>` : ""}`);
   FORM_ILAC = {barkod:s.barkod||"", etken:s.etken||"", kilit: !!(on && on.okundu)}; etkenYaz();
 }
 function stokKaydet(id){
@@ -1078,11 +1085,30 @@ function stokCikar(s){ (s.fotolar||[]).forEach(f => fotoSilDB(f).catch(() => {})
 function stokAzalt(id){
   const s = V.stok.find(x => x.id === id);
   s.adet = Math.max(0, s.adet - 1);
-  if(s.adet === 0 && confirm(s.ad + " bitti. Dolaptan çıkarılsın mı?")) stokCikar(s);
+  if(s.adet === 0){ if(confirm(s.ad + "\n\nDolapta hiç kutu kalmadı. Listeden silinsin mi?")) stokCikar(s); }
+  else serit("➖ 1 kutu azaldı", s.ad + " · dolapta " + s.adet + " kutu kaldı");
   kaydet(); kapat(); ciz();
 }
 function stokSil(id){ const s = V.stok.find(x => x.id === id); if(!confirm(s.ad + " dolaptan çıkarılsın mı?")) return; stokCikar(s); kaydet(); kapat(); ciz(); }
 
+function dolabiPaylas(){
+  const bugun = bugunStr(), g = s => sktDurum(s.skt).g;
+  const satir = s => `• ${s.ad} — ${s.adet} kutu · SKT: ${s.skt ? sktYaz(s.skt) : "girilmedi"}${s.yer ? " · " + s.yer : ""}`;
+  const st = V.stok.filter(s => s.adet > 0);
+  const iyi = st.filter(s => g(s) > 60).sort((a,b) => a.ad.localeCompare(b.ad, "tr"));
+  const yakin = st.filter(s => g(s) >= 0 && g(s) <= 60).sort((a,b) => g(a) - g(b));
+  const gec = st.filter(s => g(s) < 0);
+  const p = [`💊 İlaç dolabım (${tarihKisa(bugun)})`];
+  if(iyi.length) p.push("", "✅ Kullanılabilir:", ...iyi.map(satir));
+  if(yakin.length) p.push("", "⏳ Tarihi 60 gün içinde doluyor:", ...yakin.map(satir));
+  if(gec.length) p.push("", "⚠️ Tarihi geçmiş (kullanılmamalı):", ...gec.map(satir));
+  p.push("", "BEKAPSAĞLIK ile hazırlandı");
+  const metin = p.join("\n");
+  if(navigator.share){ navigator.share({title:"İlaç dolabım", text:metin}).catch(() => {}); return; }
+  (navigator.clipboard ? navigator.clipboard.writeText(metin) : Promise.reject()).then(
+    () => serit("📋 Liste kopyalandı", "WhatsApp'ta sohbeti açıp mesaj kutusuna yapıştırın."),
+    () => pencere(`<h3>📤 Dolap listesi</h3><p class="bilgi">Aşağıdaki yazıyı seçip kopyalayın.</p><label class="alan"><textarea readonly style="min-height:300px">${esc(metin)}</textarea></label><button class="btn genis" onclick="kapat()">Kapat</button>`));
+}
 /* Reçetedeki / takipteki ilaç evde var mı? */
 function adAnahtar(ad){ return kucuk(String(ad||"").split(",")[0]).replace(/\s+/g, " ").trim(); }
 function stokKarsilastir(k){
