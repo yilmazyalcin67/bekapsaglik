@@ -197,6 +197,7 @@ body.karsilama-modu{padding-bottom:0;background:linear-gradient(180deg,#0f766e 0
 
 <script>
 "use strict";
+const SURUM = "17.11.2026-7";
 /* ============ VERİ (yalnız bu telefonda, localStorage) ============ */
 const ANAHTAR = "bekapsaglik_v1";
 let V = yukle();
@@ -1416,7 +1417,7 @@ function ekranAyarlar(){
     <p class="bilgi">BEKAPSAĞLIK'ı ana ekrana eklerseniz diğer uygulamalar gibi simgesiyle açılır ve internetsiz çalışır.</p>
     <button class="btn genis" onclick="kurulumYardim()">${_kurOlay ? "📲 Şimdi yükle" : "📲 Nasıl kurulur?"}</button></div>` : ""}
   <div class="kart"><div class="baslik">ℹ️ Hakkında</div>
-    <p class="bilgi">BEKAPSAĞLIK · ${V.kisiler.length} kişi · ${V.ilaclar.length} ilaç · ${V.randevular.length} randevu · ${V.tahliller.length} tahlil · ${V.receteler.length} reçete · dolapta ${V.stok.length} ilaç</p>
+    <p class="bilgi">BEKAPSAĞLIK · sürüm ${SURUM} · ${V.kisiler.length} kişi · ${V.ilaclar.length} ilaç · ${V.randevular.length} randevu · ${V.tahliller.length} tahlil · ${V.receteler.length} reçete · dolapta ${V.stok.length} ilaç</p>
     <p class="bilgi" id="liste_bilgi"></p>
     <p class="bilgi">Bu uygulama hiçbir yerden veri çekmez ve hiçbir yere veri göndermez. Tıbbi tavsiye vermez; ilaç ve tedavi konusunda her zaman doktorunuza danışın.</p>
     <button class="btn tehlike kucuk" onclick="hepsiniSil()">Bütün bilgileri sil</button></div>`;
@@ -1490,7 +1491,7 @@ setInterval(() => { kontrol(); }, 30000);
 let sonGun = bugunStr();
 setInterval(() => { if(bugunStr() !== sonGun){ sonGun = bugunStr(); if(durum.ekran === "bugun") ciz(); } }, 60000);
 document.addEventListener("visibilitychange", () => { if(!document.hidden){ kontrol(); if(durum.ekran === "bugun") ciz(); } });
-if("serviceWorker" in navigator && location.protocol !== "file:"){ navigator.serviceWorker.register("sw.js").catch(()=>{}); }
+if("serviceWorker" in navigator && location.protocol !== "file:"){ navigator.serviceWorker.register("sw.js", {updateViaCache:"none"}).then(r => { r.update().catch(()=>{}); }).catch(()=>{}); }
 </script>
 </body>
 </html>
