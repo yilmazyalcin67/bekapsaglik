@@ -9,6 +9,17 @@
 <meta name="apple-mobile-web-app-title" content="BEKAPSAĞLIK">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>BEKAPSAĞLIK</title>
+<meta name="description" content="Ailenizin sağlık takibi: doktor randevuları, ilaç saatleri, tahliller, reçeteler ve ilaç dolabı tek yerde. Bilgiler yalnız telefonunuzda kalır. Ücretsiz.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://yilmazyalcin67.github.io/bekapsaglik/">
+<meta property="og:title" content="BEKAPSAĞLIK — ailenizin sağlık takibi">
+<meta property="og:description" content="Randevular, ilaç saatleri, tahliller, reçeteler ve ilaç dolabı tek yerde. Bilgiler yalnız telefonunuzda kalır. Ücretsiz.">
+<meta property="og:image" content="https://yilmazyalcin67.github.io/bekapsaglik/og-gorsel.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="BEKAPSAĞLIK uygulama simgesi ve özellikleri">
+<meta property="og:locale" content="tr_TR">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="ikon-192.png">
 <link rel="apple-touch-icon" href="ikon-180.png">
@@ -142,6 +153,20 @@ label.alan textarea{min-height:110px;resize:vertical}
 .adimlar{padding-left:22px;margin:0 0 14px}
 .adimlar li{margin-bottom:12px;font-size:17px}
 .ikon-kutu{display:inline-block;background:#fff;border:1px solid var(--cizgi);border-radius:8px;padding:0 6px}
+body.karsilama-modu header, body.karsilama-modu nav.alt{display:none}
+body.karsilama-modu{padding-bottom:0;background:linear-gradient(180deg,#0f766e 0%,#0f766e 34%,var(--zemin) 34%)}
+.karsilama{max-width:460px;margin:0 auto;padding:calc(28px + env(safe-area-inset-top)) 4px 28px;text-align:center}
+.karsilama .k-ikon{width:112px;height:112px;border-radius:26px;box-shadow:0 8px 24px rgba(0,0,0,.25);background:#fff}
+.karsilama h1{color:#fff;font-size:30px;margin:14px 0 2px;letter-spacing:.5px}
+.karsilama .k-alt{color:#ccfbf1;font-size:18px;margin:0 0 22px}
+.k-liste{list-style:none;padding:16px 18px;margin:0 0 18px;background:#fff;border-radius:18px;text-align:left;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+.k-liste li{padding:9px 0;border-top:1px solid var(--cizgi);font-size:16px}
+.k-liste li:first-child{border-top:0}
+.k-dugmeler{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
+.k-btn{width:100%;min-height:58px;font-size:19px;border-radius:16px;background:#fff;color:var(--ana);border:2px solid var(--ana)}
+.k-btn.on{background:var(--ana);color:#fff}
+.k-guven{color:var(--soluk);font-size:14px;margin:6px 8px 14px}
+.k-devam{border:0;background:none;color:var(--ana);font-size:15px;text-decoration:underline;padding:10px}
 </style>
 </head>
 <body>
@@ -239,7 +264,10 @@ function ciz(){
   document.querySelectorAll("nav.alt button").forEach(b => b.classList.toggle("on", b.dataset.git === (durum.ekran === "kisi" ? "kisiler" : durum.ekran)));
   document.getElementById("geri").hidden = durum.ekran !== "kisi";
   let bas = "BEKAPSAĞLIK";
-  if(durum.ekran === "bugun") E.innerHTML = ekranBugun();
+  const kars = durum.ekran === "bugun" && karsilamaGoster();
+  document.body.classList.toggle("karsilama-modu", kars);
+  if(kars) E.innerHTML = ekranKarsilama();
+  else if(durum.ekran === "bugun") E.innerHTML = ekranBugun();
   else if(durum.ekran === "kisiler"){ bas = "Kişiler"; E.innerHTML = ekranKisiler(); }
   else if(durum.ekran === "kisi"){ bas = kisi(durum.kid).ad; E.innerHTML = ekranKisi(); }
   else if(durum.ekran === "dolap"){ bas = "İlaç Dolabı"; E.innerHTML = ekranDolap(); }
@@ -1170,8 +1198,9 @@ function kurBandi(){
   return `<div class="kur-bant"><div style="flex:1"><b>📲 BEKAPSAĞLIK'ı telefonuna kur</b><div>Simgesiyle açılsın, internetsiz çalışsın.</div></div>
     <button class="btn kucuk" onclick="kurulumYardim()">Nasıl?</button><button class="kapat-x" aria-label="Kapat" onclick="V.ayar.kurGizle=1;kaydet();ciz()">✕</button></div>`;
 }
-async function kurulumYardim(){
-  if(_kurOlay){ _kurOlay.prompt(); try{ await _kurOlay.userChoice; }catch(e){} _kurOlay = null; ciz(); return; }
+async function kurulumYardim(plat){
+  const iosAdim = plat ? plat === "ios" : IOS;
+  if(!iosAdim && _kurOlay){ _kurOlay.prompt(); try{ await _kurOlay.userChoice; }catch(e){} _kurOlay = null; ciz(); return; }
   const ua = navigator.userAgent, safariDisi = IOS && /CriOS|FxiOS|EdgiOS|OPiOS|GSA\//.test(ua);
   const ios = `<ol class="adimlar">
       ${safariDisi ? `<li><b>Bu sayfayı Safari'de açın.</b> Kurulum yalnız Safari'den yapılır (pusula simgeli uygulama). Adresi kopyalayıp Safari'ye yapıştırın.</li>` : ""}
@@ -1184,7 +1213,28 @@ async function kurulumYardim(){
       <li><b>“Uygulamayı yükle”</b> ya da <b>“Ana ekrana ekle”</b>ye dokunun, sonra <b>“Yükle”</b>.</li>
       <li>Bir dakika içinde ana ekranda yeşil <b>BEKAPSAĞLIK</b> simgesi çıkar; oradan açın.</li></ol>
       <p class="bilgi">WhatsApp'ın içinde açtıysanız önce sağ üstteki ⋮ menüsünden <b>“Chrome'da aç”</b>ı seçin.</p>`;
-  pencere(`<h3>📲 Telefona kurma</h3>${IOS ? ios : android}<button class="btn genis" onclick="kapat()">Anladım</button>`);
+  pencere(`<h3>${iosAdim ? "🍎 iPhone'a kurma" : "🤖 Android'e kurma"}</h3>${iosAdim ? ios : android}<button class="btn genis" onclick="kapat()">Anladım</button>`);
+}
+function karsilamaGoster(){ return !kuruluMu() && !V.ayar.tarayicidaDevam && !V.kisiler.length; }
+function ekranKarsilama(){
+  const ad = _kurOlay ? "🤖 Android'e yükle" : "🤖 Android'e yükle";
+  return `<div class="karsilama">
+    <img src="ikon-192.png" alt="" class="k-ikon">
+    <h1>BEKAPSAĞLIK</h1>
+    <p class="k-alt">Ailenizin sağlık takibi, tek yerde.</p>
+    <ul class="k-liste">
+      <li>🩺 Doktor randevuları ve doktorun söyledikleri</li>
+      <li>💊 İlaç saatleri: sabah, öğle, akşam; aç ya da tok</li>
+      <li>🧪 Tahliller ve sonuçları</li>
+      <li>📋 Reçeteler ve evdeki ilaç dolabı</li>
+    </ul>
+    <div class="k-dugmeler">
+      <button class="btn k-btn ${IOS ? "on" : ""}" onclick="kurulumYardim('ios')">🍎 iPhone'a yükle</button>
+      <button class="btn k-btn ${!IOS ? "on" : ""}" onclick="kurulumYardim('android')">${ad}</button>
+    </div>
+    <p class="k-guven">🔒 Bilgileriniz yalnız kendi telefonunuzda saklanır, hiçbir yere gönderilmez. Ücretsiz.</p>
+    <button class="k-devam" onclick="V.ayar.tarayicidaDevam=1;kaydet();ciz()">Kurmadan, tarayıcıda devam et</button>
+  </div>`;
 }
 /* ============ AYARLAR ============ */
 function ekranAyarlar(){
