@@ -278,7 +278,7 @@ function ciz(){
 /* ============ BUGÜN ============ */
 function ekranBugun(){
   const gun = bugunStr(), d = new Date();
-  let h = kurBandi() + `<p class="gun-bas">${d.getDate()} ${AYLAR[d.getMonth()]} ${d.getFullYear()}, ${GUNLER[d.getDay()]}</p>`;
+  let h = kurBandi() + yedekBandi() + `<p class="gun-bas">${d.getDate()} ${AYLAR[d.getMonth()]} ${d.getFullYear()}, ${GUNLER[d.getDay()]}</p>`;
   if(!V.kisiler.length){
     return h + `<div class="kart"><div class="baslik">Hoş geldiniz 👋</div>
       <p>BEKAPSAĞLIK ile ailenizdeki kişilerin doktor randevularını, ilaçlarını ve tahlillerini tek yerden takip edebilirsiniz.</p>
@@ -1266,16 +1266,43 @@ function ekranAyarlar(){
     <button class="btn tehlike kucuk" onclick="hepsiniSil()">Bütün bilgileri sil</button></div>`;
 }
 function izinIste(){ Notification.requestPermission().then(() => ciz()); }
-async function yedekAl(){
-  V.ayar.sonYedek = bugunStr(); kaydet();
+/* Yedek hatırlatması: 30 günde bir (hiç yedek yoksa ilk kullanımdan 3 gün sonra) */
+function yedekGunu(){
+  if(!V.kisiler.length) return null;
+  if(!V.ayar.ilkKullanim){ V.ayar.ilkKullanim = bugunStr(); kaydet(); }
+  const bugun = bugunStr();
+  if(V.ayar.yedekErtele && gunFarki(bugun, V.ayar.yedekErtele) > 0) return null;
+  if(V.ayar.sonYedek){ const g = gunFarki(V.ayar.sonYedek, bugun); return g >= 30 ? g : null; }
+  return gunFarki(V.ayar.ilkKullanim, bugun) >= 3 ? -1 : null;
+}
+function yedekBandi(){
+  const g = yedekGunu(); if(g === null) return "";
+  return `<div class="uyari yedek-bant"><b>💾 ${g < 0 ? "Henüz hiç yedek almadınız." : "Son yedeğiniz " + g + " gün önce."}</b>
+    Telefon değişir ya da bozulursa bilgileriniz kaybolmasın.
+    <div class="islemler"><button class="btn kucuk" onclick="yedekAl()">💾 Şimdi yedek al</button>
+    <button class="btn ikincil kucuk" onclick="yedekErtele()">Sonra hatırlat</button></div></div>`;
+}
+function yedekErtele(){ const d = new Date(); d.setDate(d.getDate() + 3); V.ayar.yedekErtele = bugunStr(d); kaydet(); ciz(); }
+function yedekAl(){
+  pencere(`<h3>💾 Yedek al</h3>
+    <p>Birazdan telefonun <b>paylaşım ekranı</b> açılacak. Yedek dosyasını güvenli bir yere kaydedin:</p>
+    <ul class="adimlar">
+      <li><b>Google Drive</b>'ı seçin <span class="kucuk-yazi">(Android ve iPhone)</span></li>
+      <li>ya da <b>“Dosyalar'a Kaydet” → iCloud Drive</b> <span class="kucuk-yazi">(iPhone)</span></li>
+      <li>ya da <b>Gmail</b>'i seçip <b>kendinize e-posta</b> olarak gönderin</li></ul>
+    <p class="bilgi">Telefon değişirse yeni telefonda Ayarlar → <b>“Yedekten geri yükle”</b> ile bu dosyayı seçince her şey geri gelir.</p>
+    <div class="satir"><button class="btn ikincil" onclick="kapat()">Vazgeç</button><button class="btn" onclick="kapat();yedekGonder()">Devam</button></div>`);
+}
+async function yedekGonder(){
   let fotolar = {}; try{ fotolar = await fotoHepsi(); }catch(e){}
+  const tamam = () => { V.ayar.sonYedek = bugunStr(); delete V.ayar.yedekErtele; kaydet(); ciz(); };
   const blob = new Blob([JSON.stringify(Object.assign({}, V, {fotolar}))], {type:"application/json"});
   const ad = "bekapsaglik-yedek-" + bugunStr() + ".json";
   try{ const f = new File([blob], ad, {type:"application/json"});
-    if(navigator.canShare && navigator.canShare({files:[f]})){ await navigator.share({files:[f], title:ad}); ciz(); return; } }catch(e){ if(e && e.name === "AbortError"){ ciz(); return; } }
+    if(navigator.canShare && navigator.canShare({files:[f]})){ await navigator.share({files:[f], title:ad}); tamam(); serit("✅ Yedek hazırlandı", "Bir sonraki hatırlatma 30 gün sonra."); return; } }catch(e){ if(e && e.name === "AbortError"){ ciz(); return; } }
   const u = URL.createObjectURL(blob), a = document.createElement("a"); a.href = u; a.download = ad; document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(u), 60000);
-  ciz();
+  tamam(); serit("✅ Yedek dosyası indirildi", ad + " · İndirilenler klasöründe. Google Drive'a da kaydedin.");
 }
 function yedekYukle(inp){
   const f = inp.files[0]; if(!f) return;
