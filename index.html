@@ -1,0 +1,760 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f766e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="BEKAPSAĞLIK">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>BEKAPSAĞLIK</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="ikon-192.png">
+<link rel="apple-touch-icon" href="ikon-180.png">
+<style>
+:root{
+  --ana:#0f766e; --ana2:#14b8a6; --ana-acik:#ccfbf1;
+  --zemin:#f4f7f6; --kart:#ffffff; --yazi:#1f2a2e; --soluk:#64748b; --cizgi:#e2e8f0;
+  --kirmizi:#dc2626; --kirmizi-acik:#fee2e2; --sari:#b45309; --sari-acik:#fef3c7;
+  --mavi:#1d4ed8; --mavi-acik:#dbeafe; --yesil:#15803d; --yesil-acik:#dcfce7;
+}
+[hidden]{display:none!important}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{background:var(--zemin);color:var(--yazi);font:17px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  padding-bottom:calc(76px + env(safe-area-inset-bottom));min-height:100vh}
+header{position:sticky;top:0;z-index:5;background:var(--ana);color:#fff;padding:calc(10px + env(safe-area-inset-top)) 16px 12px;
+  display:flex;align-items:center;gap:10px}
+header h1{font-size:20px;margin:0;flex:1;font-weight:700;letter-spacing:.3px}
+header .geri{background:rgba(255,255,255,.18);border:0;color:#fff;font-size:22px;width:40px;height:40px;border-radius:12px}
+main{padding:14px 14px 20px;max-width:640px;margin:0 auto}
+nav.alt{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--cizgi);display:flex;
+  padding-bottom:env(safe-area-inset-bottom);z-index:6}
+nav.alt button{flex:1;border:0;background:none;padding:8px 0 10px;font-size:13px;color:var(--soluk);display:flex;flex-direction:column;align-items:center;gap:2px}
+nav.alt button .s{font-size:24px;line-height:1}
+nav.alt button.on{color:var(--ana);font-weight:700}
+h2{font-size:19px;margin:18px 4px 8px}
+h2:first-child{margin-top:4px}
+.kart{background:var(--kart);border-radius:16px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.bos{color:var(--soluk);text-align:center;padding:22px 10px;background:var(--kart);border-radius:16px;margin-bottom:10px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:12px;padding:12px 16px;font-size:16px;font-weight:600;
+  background:var(--ana);color:#fff;min-height:48px}
+.btn.genis{width:100%}
+.btn.ikincil{background:var(--ana-acik);color:var(--ana)}
+.btn.tehlike{background:var(--kirmizi-acik);color:var(--kirmizi)}
+.btn.kucuk{padding:8px 12px;min-height:38px;font-size:14px}
+.satir{display:flex;gap:8px;align-items:center}
+.satir > *{flex:1}
+.kisi{display:flex;align-items:center;gap:14px;cursor:pointer}
+.avatar{width:52px;height:52px;border-radius:50%;background:var(--ana-acik);color:var(--ana);display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:22px;flex:0 0 52px}
+.kisi .ad{font-weight:700;font-size:18px}
+.kisi .alt{color:var(--soluk);font-size:14px}
+.ok{margin-left:auto;color:var(--soluk);font-size:22px}
+.sekmeler{display:flex;gap:6px;overflow-x:auto;margin:0 -14px 12px;padding:0 14px 2px;scrollbar-width:none}
+.sekmeler::-webkit-scrollbar{display:none}
+.sekmeler button{border:0;background:#fff;border-radius:999px;padding:10px 16px;font-size:15px;font-weight:600;color:var(--soluk);white-space:nowrap;
+  box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.sekmeler button.on{background:var(--ana);color:#fff}
+.etiket{display:inline-block;font-size:13px;font-weight:700;padding:3px 9px;border-radius:999px;margin-right:4px}
+.e-ac{background:var(--sari-acik);color:var(--sari)}
+.e-tok{background:var(--yesil-acik);color:var(--yesil)}
+.e-yemek{background:var(--mavi-acik);color:var(--mavi)}
+.e-fark{background:#f1f5f9;color:var(--soluk)}
+.e-kirmizi{background:var(--kirmizi-acik);color:var(--kirmizi)}
+.e-sari{background:var(--sari-acik);color:var(--sari)}
+.e-yesil{background:var(--yesil-acik);color:var(--yesil)}
+.e-mavi{background:var(--mavi-acik);color:var(--mavi)}
+.baslik{font-weight:700;font-size:17px}
+.bilgi{color:var(--soluk);font-size:15px}
+.not{white-space:pre-wrap;background:#f8fafc;border-left:4px solid var(--ana2);padding:8px 10px;border-radius:8px;margin-top:8px;font-size:15px}
+.dilim{margin-bottom:14px}
+.dilim-bas{display:flex;align-items:center;gap:8px;font-weight:800;font-size:18px;margin:4px 4px 8px}
+.dilim-bas .saat{color:var(--soluk);font-weight:600;font-size:14px}
+.ilac-satir{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--cizgi)}
+.ilac-satir:first-of-type{border-top:0}
+.tik{width:44px;height:44px;border-radius:12px;border:2px solid var(--cizgi);background:#fff;font-size:24px;flex:0 0 44px;color:#fff}
+.tik.on{background:var(--yesil);border-color:var(--yesil)}
+.ilac-satir.alindi .iad{text-decoration:line-through;color:var(--soluk)}
+.iad{font-weight:700}
+.alt-grup{font-size:14px;font-weight:700;margin:10px 0 2px}
+.uyari{background:var(--sari-acik);color:#78350f;border-radius:14px;padding:12px 14px;margin-bottom:10px;font-size:15px}
+.uyari.kirmizi{background:var(--kirmizi-acik);color:#7f1d1d}
+.islemler{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.tarih-kutu{flex:0 0 58px;text-align:center;background:var(--ana-acik);color:var(--ana);border-radius:12px;padding:6px 0;line-height:1.1}
+.tarih-kutu .g{font-size:22px;font-weight:800}
+.tarih-kutu .a{font-size:12px;font-weight:700;text-transform:uppercase}
+.tarih-kutu.gecmis{background:#f1f5f9;color:var(--soluk)}
+.olay{display:flex;gap:12px;align-items:flex-start}
+.olay .govde{flex:1;min-width:0}
+/* form penceresi */
+.perde{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.pencere{background:var(--zemin);width:100%;max-width:640px;max-height:94vh;overflow:auto;border-radius:20px 20px 0 0;padding:16px 16px calc(20px + env(safe-area-inset-bottom))}
+.pencere h3{margin:2px 0 12px;font-size:20px}
+label.alan{display:block;margin-bottom:12px;font-weight:600;font-size:15px}
+label.alan input,label.alan select,label.alan textarea{display:block;width:100%;margin-top:5px;font:inherit;font-weight:400;padding:12px;border-radius:12px;
+  border:1px solid #cbd5e1;background:#fff;color:var(--yazi);min-height:48px}
+label.alan textarea{min-height:110px;resize:vertical}
+.ipucu{font-weight:400;color:var(--soluk);font-size:13px;margin-top:3px}
+.secim{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 12px}
+.secim button{border:1px solid #cbd5e1;background:#fff;border-radius:999px;padding:10px 14px;font-size:15px;color:var(--yazi)}
+.secim button.on{background:var(--ana);color:#fff;border-color:var(--ana)}
+.zaman{display:flex;align-items:center;gap:10px;background:#fff;border-radius:12px;padding:8px 10px;margin-bottom:8px;border:1px solid #cbd5e1}
+.zaman input[type=checkbox]{width:24px;height:24px}
+.zaman span{flex:1;font-weight:600}
+.zaman input[type=time]{font:inherit;padding:8px;border-radius:10px;border:1px solid #cbd5e1;width:120px}
+.bildirim-serit{position:fixed;left:12px;right:12px;top:calc(12px + env(safe-area-inset-top));z-index:30;background:#0f172a;color:#fff;border-radius:16px;
+  padding:14px 16px;box-shadow:0 10px 30px rgba(0,0,0,.3);font-size:16px}
+.bildirim-serit b{display:block;font-size:17px;margin-bottom:2px}
+.ozet{display:flex;gap:8px;margin-bottom:12px}
+.ozet div{flex:1;background:#fff;border-radius:14px;padding:10px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.ozet b{display:block;font-size:22px;color:var(--ana)}
+.ozet span{font-size:13px;color:var(--soluk)}
+.gun-bas{color:var(--soluk);font-size:15px;margin:0 4px 12px}
+.kucuk-yazi{font-size:13px;color:var(--soluk)}
+</style>
+</head>
+<body>
+<header><button class="geri" id="geri" hidden aria-label="Geri">‹</button><h1 id="baslik">BEKAPSAĞLIK</h1></header>
+<main id="ekran"></main>
+<nav class="alt">
+  <button data-git="bugun"><span class="s">🗓️</span>Bugün</button>
+  <button data-git="kisiler"><span class="s">👨‍👩‍👧</span>Kişiler</button>
+  <button data-git="ayarlar"><span class="s">⚙️</span>Ayarlar</button>
+</nav>
+<div id="pencere-yeri"></div>
+<div id="serit-yeri"></div>
+
+<script>
+"use strict";
+/* ============ VERİ (yalnız bu telefonda, localStorage) ============ */
+const ANAHTAR = "bekapsaglik_v1";
+let V = yukle();
+function bos(){ return {kisiler:[], randevular:[], ilaclar:[], tahliller:[], notlar:[], alinan:{}, bildirilen:{}, ayar:{}}; }
+function yukle(){
+  try{ const t = localStorage.getItem(ANAHTAR); if(t){ const d = JSON.parse(t); return Object.assign(bos(), d); } }catch(e){}
+  return bos();
+}
+function kaydet(){
+  try{ localStorage.setItem(ANAHTAR, JSON.stringify(V)); }
+  catch(e){ alert("Kaydedilemedi! Telefonun hafızası dolu olabilir. Ayarlar'dan yedek alın."); }
+}
+if(navigator.storage && navigator.storage.persist){ navigator.storage.persist().catch(()=>{}); }
+function yeniId(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+/* ============ YARDIMCILAR ============ */
+const AYLAR = ["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
+const AY_K = ["Oca","Şub","Mar","Nis","May","Haz","Tem","Ağu","Eyl","Eki","Kas","Ara"];
+const GUNLER = ["Pazar","Pazartesi","Salı","Çarşamba","Perşembe","Cuma","Cumartesi"];
+const GUN_K = {1:"Pzt",2:"Sal",3:"Çar",4:"Per",5:"Cum",6:"Cmt",7:"Paz"};
+const DILIMLER = [
+  {k:"sabah", ad:"Sabah", s:"🌅", vars:"08:00"},
+  {k:"ogle",  ad:"Öğle",  s:"☀️", vars:"13:00"},
+  {k:"aksam", ad:"Akşam", s:"🌇", vars:"19:00"},
+  {k:"gece",  ad:"Gece",  s:"🌙", vars:"22:00"}];
+const KULLANIM = {ac:{ad:"Aç karnına",c:"e-ac"}, tok:{ad:"Tok karnına",c:"e-tok"}, yemek:{ad:"Yemekle birlikte",c:"e-yemek"}, fark:{ad:"Fark etmez",c:"e-fark"}};
+const esc = s => String(s==null?"":s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const iki = n => String(n).padStart(2,"0");
+function bugunStr(d){ d = d || new Date(); return d.getFullYear()+"-"+iki(d.getMonth()+1)+"-"+iki(d.getDate()); }
+function tarihObj(s){ const [y,m,g] = s.split("-").map(Number); return new Date(y, m-1, g); }
+function gunFarki(a, b){ return Math.round((tarihObj(b) - tarihObj(a)) / 86400000); }
+function tarihYaz(s){ if(!s) return ""; const d = tarihObj(s); return d.getDate()+" "+AYLAR[d.getMonth()]+" "+d.getFullYear()+", "+GUNLER[d.getDay()]; }
+function tarihKisa(s){ if(!s) return ""; const d = tarihObj(s); return d.getDate()+" "+AYLAR[d.getMonth()]+" "+d.getFullYear(); }
+function kalanYaz(s){
+  const f = gunFarki(bugunStr(), s);
+  if(f === 0) return "Bugün"; if(f === 1) return "Yarın"; if(f === -1) return "Dün";
+  return f > 0 ? f+" gün sonra" : (-f)+" gün önce";
+}
+function kisi(id){ return V.kisiler.find(k => k.id === id) || {ad:"?"}; }
+function basHarf(ad){ return (ad||"?").trim().charAt(0).toLocaleUpperCase("tr"); }
+function haftaGunu(s){ const g = tarihObj(s).getDay(); return g === 0 ? 7 : g; }
+function dilimBul(saat){ const h = +saat.slice(0,2); return h < 11 ? "sabah" : h < 15 ? "ogle" : h < 21 ? "aksam" : "gece"; }
+
+/* İlaç o gün verilecek mi? */
+function ilacBugunMu(il, gun){
+  if(il.durdu) return false;
+  if(il.bas && gun < il.bas) return false;
+  if(il.bit && gun > il.bit) return false;
+  if(il.siklik === "gunasiri"){ return gunFarki(il.bas || gun, gun) % 2 === 0; }
+  if(il.siklik === "gunler"){ return (il.gunler||[]).includes(haftaGunu(gun)); }
+  if(il.siklik === "lazim") return false;
+  return true;
+}
+function siklikYaz(il){
+  if(il.siklik === "gunasiri") return "Gün aşırı";
+  if(il.siklik === "gunler") return "Haftada: " + (il.gunler||[]).sort().map(g=>GUN_K[g]).join(", ");
+  if(il.siklik === "lazim") return "Gerektiğinde";
+  return "Her gün";
+}
+function gunlukListe(gun){
+  const liste = [];
+  V.ilaclar.forEach(il => {
+    if(!ilacBugunMu(il, gun)) return;
+    (il.zamanlar||[]).forEach(z => liste.push({il, saat:z.saat, dilim:z.dilim || dilimBul(z.saat), anahtar: il.id+"@"+z.saat}));
+  });
+  return liste.sort((a,b) => a.saat.localeCompare(b.saat));
+}
+
+/* ============ YÖNLENDİRME ============ */
+let durum = {ekran:"bugun", kid:null, sekme:"randevu"};
+const gecmis = [];
+function git(ekran, ek){ gecmis.push(Object.assign({}, durum)); durum = Object.assign({ekran}, ek||{}); ciz(); window.scrollTo(0,0); }
+function geri(){ durum = gecmis.pop() || {ekran:"bugun"}; ciz(); }
+document.getElementById("geri").onclick = geri;
+document.querySelectorAll("nav.alt button").forEach(b => b.onclick = () => { gecmis.length = 0; durum = {ekran:b.dataset.git}; ciz(); window.scrollTo(0,0); });
+
+function ciz(){
+  const E = document.getElementById("ekran");
+  document.querySelectorAll("nav.alt button").forEach(b => b.classList.toggle("on", b.dataset.git === (durum.ekran === "kisi" ? "kisiler" : durum.ekran)));
+  document.getElementById("geri").hidden = durum.ekran !== "kisi";
+  let bas = "BEKAPSAĞLIK";
+  if(durum.ekran === "bugun") E.innerHTML = ekranBugun();
+  else if(durum.ekran === "kisiler"){ bas = "Kişiler"; E.innerHTML = ekranKisiler(); }
+  else if(durum.ekran === "kisi"){ bas = kisi(durum.kid).ad; E.innerHTML = ekranKisi(); }
+  else if(durum.ekran === "ayarlar"){ bas = "Ayarlar"; E.innerHTML = ekranAyarlar(); }
+  document.getElementById("baslik").textContent = bas;
+}
+
+/* ============ BUGÜN ============ */
+function ekranBugun(){
+  const gun = bugunStr(), d = new Date();
+  let h = `<p class="gun-bas">${d.getDate()} ${AYLAR[d.getMonth()]} ${d.getFullYear()}, ${GUNLER[d.getDay()]}</p>`;
+  if(!V.kisiler.length){
+    return h + `<div class="kart"><div class="baslik">Hoş geldiniz 👋</div>
+      <p>BEKAPSAĞLIK ile ailenizdeki kişilerin doktor randevularını, ilaçlarını ve tahlillerini tek yerden takip edebilirsiniz.</p>
+      <p class="bilgi">Bütün bilgiler yalnız bu telefonda saklanır, hiçbir yere gönderilmez.</p>
+      <button class="btn genis" onclick="kisiFormu()">＋ İlk kişiyi ekle</button></div>`;
+  }
+  // uyarılar: rapor bitişi
+  V.ilaclar.forEach(il => {
+    if(il.durdu || !il.rapor) return;
+    const f = gunFarki(gun, il.rapor);
+    if(f < 0) h += `<div class="uyari kirmizi">⚠️ <b>${esc(kisi(il.kid).ad)}</b> · ${esc(il.ad)}: ilaç raporunun süresi <b>${-f} gün önce doldu</b> (${tarihKisa(il.rapor)}).</div>`;
+    else if(f <= 30) h += `<div class="uyari">📄 <b>${esc(kisi(il.kid).ad)}</b> · ${esc(il.ad)}: ilaç raporu <b>${f === 0 ? "bugün" : f+" gün sonra"}</b> bitiyor (${tarihKisa(il.rapor)}).</div>`;
+  });
+  const liste = gunlukListe(gun);
+  const alinan = V.alinan[gun] || {};
+  const verilen = liste.filter(x => alinan[x.anahtar]).length;
+  const yakin = yaklasanlar(7);
+  h += `<div class="ozet"><div><b>${verilen}/${liste.length}</b><span>bugünkü ilaç</span></div><div><b>${yakin.length}</b><span>7 gün içinde randevu/tahlil</span></div></div>`;
+
+  h += `<h2>💊 Bugünkü ilaçlar</h2>`;
+  if(!liste.length) h += `<div class="bos">Bugün için kayıtlı ilaç saati yok.</div>`;
+  DILIMLER.forEach(dl => {
+    const grup = liste.filter(x => x.dilim === dl.k);
+    if(!grup.length) return;
+    h += `<div class="kart dilim"><div class="dilim-bas">${dl.s} ${dl.ad}</div>`;
+    ["ac","tok","yemek","fark"].forEach(ku => {
+      const alt = grup.filter(x => (x.il.kullanim||"fark") === ku);
+      if(!alt.length) return;
+      h += `<div class="alt-grup"><span class="etiket ${KULLANIM[ku].c}">${KULLANIM[ku].ad}</span></div>`;
+      alt.forEach(x => {
+        const ok = !!alinan[x.anahtar];
+        h += `<div class="ilac-satir ${ok?"alindi":""}">
+          <button class="tik ${ok?"on":""}" aria-label="Verildi" onclick="tikla('${x.anahtar}')">${ok?"✓":""}</button>
+          <div style="flex:1"><div class="iad">${esc(x.il.ad)} <span class="bilgi">· ${esc(x.il.doz||"")}</span></div>
+          <div class="bilgi">${esc(kisi(x.il.kid).ad)} · ${x.saat}${ok?" · verildi "+alinan[x.anahtar]:""}</div></div></div>`;
+      });
+    });
+    h += `</div>`;
+  });
+
+  h += `<h2>📅 Yaklaşan randevu ve tahliller</h2>`;
+  if(!yakin.length) h += `<div class="bos">Önümüzdeki 7 günde randevu ya da tahlil yok.</div>`;
+  yakin.forEach(o => h += olayKarti(o, true));
+  return h;
+}
+function tikla(anahtar){
+  const gun = bugunStr();
+  V.alinan[gun] = V.alinan[gun] || {};
+  if(V.alinan[gun][anahtar]) delete V.alinan[gun][anahtar];
+  else { const d = new Date(); V.alinan[gun][anahtar] = iki(d.getHours())+":"+iki(d.getMinutes()); }
+  // 60 günden eski işaretleri temizle
+  Object.keys(V.alinan).forEach(g => { if(gunFarki(g, gun) > 60) delete V.alinan[g]; });
+  kaydet(); ciz();
+}
+function yaklasanlar(gunSay, kid){
+  const gun = bugunStr(), out = [];
+  V.randevular.forEach(r => { if(r.durum === "bekliyor" && (!kid || r.kid === kid)){ const f = gunFarki(gun, r.tarih); if(f >= 0 && f <= gunSay) out.push({tur:"randevu", o:r}); } });
+  V.tahliller.forEach(t => { if(t.durum === "bekliyor" && t.tarih && (!kid || t.kid === kid)){ const f = gunFarki(gun, t.tarih); if(f >= 0 && f <= gunSay) out.push({tur:"tahlil", o:t}); } });
+  return out.sort((a,b) => (a.o.tarih+(a.o.saat||"")).localeCompare(b.o.tarih+(b.o.saat||"")));
+}
+function olayKarti(x, kisiGoster){
+  const o = x.o, d = o.tarih ? tarihObj(o.tarih) : null;
+  const gecti = o.tarih && gunFarki(bugunStr(), o.tarih) < 0;
+  const kutu = d ? `<div class="tarih-kutu ${gecti||o.durum!=="bekliyor"?"gecmis":""}"><div class="g">${d.getDate()}</div><div class="a">${AY_K[d.getMonth()]}</div><div class="a">${o.saat||""}</div></div>` : `<div class="tarih-kutu gecmis"><div class="g">?</div><div class="a">tarih yok</div></div>`;
+  const fn = x.tur === "randevu" ? `randevuFormu('${o.id}')` : `tahlilFormu('${o.id}')`;
+  let ust, alt;
+  if(x.tur === "randevu"){
+    ust = `🩺 ${esc(o.bolum||"Doktor randevusu")}${o.doktor?" · "+esc(o.doktor):""}`;
+    alt = esc(o.hastane||"");
+  } else {
+    ust = `🧪 ${esc(o.ad)}`;
+    alt = esc(o.yer||"") + (o.doktor ? " · İsteyen: "+esc(o.doktor) : "");
+  }
+  const dur = o.durum === "gidildi" ? `<span class="etiket e-yesil">${x.tur==="randevu"?"Gidildi":"Yapıldı"}</span>` :
+              o.durum === "iptal" ? `<span class="etiket e-kirmizi">İptal</span>` :
+              gecti ? `<span class="etiket e-sari">Tarihi geçti</span>` :
+              o.tarih ? `<span class="etiket e-mavi">${kalanYaz(o.tarih)}</span>` : "";
+  const notAlan = x.tur === "randevu" ? o.notlar : o.sonuc;
+  return `<div class="kart olay" onclick="${fn}">${kutu}<div class="govde">
+    <div class="baslik">${ust}</div>
+    ${kisiGoster ? `<div class="bilgi">👤 ${esc(kisi(o.kid).ad)}</div>` : ""}
+    ${alt ? `<div class="bilgi">📍 ${alt}</div>` : ""}
+    <div style="margin-top:4px">${dur}</div>
+    ${notAlan ? `<div class="not">${esc(notAlan)}</div>` : ""}
+  </div></div>`;
+}
+
+/* ============ KİŞİLER ============ */
+function ekranKisiler(){
+  let h = `<button class="btn genis" onclick="kisiFormu()" style="margin-bottom:12px">＋ Kişi ekle</button>`;
+  if(!V.kisiler.length) return h + `<div class="bos">Henüz kişi eklenmedi.<br>Örneğin “Babam” ya da adını yazarak başlayın.</div>`;
+  V.kisiler.forEach(k => {
+    const ilac = V.ilaclar.filter(i => i.kid === k.id && !i.durdu).length;
+    const yak = yaklasanlar(3650, k.id).length;
+    h += `<div class="kart kisi" onclick="git('kisi',{kid:'${k.id}',sekme:'randevu'})">
+      <div class="avatar">${esc(basHarf(k.ad))}</div>
+      <div><div class="ad">${esc(k.ad)}</div><div class="alt">${esc(k.yakinlik||"")}${k.yakinlik?" · ":""}${ilac} ilaç · ${yak} yaklaşan</div></div>
+      <div class="ok">›</div></div>`;
+  });
+  return h;
+}
+function ekranKisi(){
+  const k = kisi(durum.kid);
+  const S = [["randevu","🩺 Randevular"],["ilac","💊 İlaçlar"],["tahlil","🧪 Tahliller"],["not","📝 Notlar"],["bilgi","👤 Bilgiler"]];
+  let h = `<div class="sekmeler">` + S.map(([s,a]) => `<button class="${durum.sekme===s?"on":""}" onclick="sekme('${s}')">${a}</button>`).join("") + `</div>`;
+  if(durum.sekme === "randevu"){
+    h += `<button class="btn genis" onclick="randevuFormu()" style="margin-bottom:12px">＋ Randevu ekle</button>`;
+    const rs = V.randevular.filter(r => r.kid === k.id);
+    const yak = rs.filter(r => r.durum === "bekliyor" && gunFarki(bugunStr(), r.tarih) >= 0).sort((a,b)=>(a.tarih+a.saat).localeCompare(b.tarih+b.saat));
+    const gec = rs.filter(r => !yak.includes(r)).sort((a,b)=>(b.tarih+b.saat).localeCompare(a.tarih+a.saat));
+    h += `<h2>Yaklaşan</h2>` + (yak.length ? yak.map(r => olayKarti({tur:"randevu",o:r})).join("") : `<div class="bos">Yaklaşan randevu yok.</div>`);
+    if(gec.length) h += `<h2>Geçmiş randevular</h2>` + gec.map(r => olayKarti({tur:"randevu",o:r})).join("");
+  }
+  else if(durum.sekme === "ilac"){
+    h += `<button class="btn genis" onclick="ilacFormu()" style="margin-bottom:12px">＋ İlaç ekle</button>`;
+    const is = V.ilaclar.filter(i => i.kid === k.id);
+    const aktif = is.filter(i => !i.durdu), biten = is.filter(i => i.durdu);
+    if(aktif.length) h += gunlukOzet(aktif);
+    h += `<h2>Kullandığı ilaçlar</h2>` + (aktif.length ? aktif.map(ilacKarti).join("") : `<div class="bos">Kayıtlı ilaç yok.</div>`);
+    if(biten.length) h += `<h2>Bırakılan ilaçlar</h2>` + biten.map(ilacKarti).join("");
+  }
+  else if(durum.sekme === "tahlil"){
+    h += `<button class="btn genis" onclick="tahlilFormu()" style="margin-bottom:12px">＋ Tahlil ekle</button>`;
+    const ts = V.tahliller.filter(t => t.kid === k.id).sort((a,b)=>((b.tarih||"9")+(b.saat||"")).localeCompare((a.tarih||"9")+(a.saat||"")));
+    const bekl = ts.filter(t => t.durum === "bekliyor"), diger = ts.filter(t => t.durum !== "bekliyor");
+    h += `<h2>Yapılacak tahliller</h2>` + (bekl.length ? bekl.reverse().map(t => olayKarti({tur:"tahlil",o:t})).join("") : `<div class="bos">Bekleyen tahlil yok.</div>`);
+    if(diger.length) h += `<h2>Yapılan tahliller</h2>` + diger.map(t => olayKarti({tur:"tahlil",o:t})).join("");
+  }
+  else if(durum.sekme === "not"){
+    h += `<button class="btn genis" onclick="notFormu()" style="margin-bottom:12px">＋ Not ekle</button>`;
+    const ns = V.notlar.filter(n => n.kid === k.id).sort((a,b)=>b.tarih.localeCompare(a.tarih));
+    const rn = V.randevular.filter(r => r.kid === k.id && r.notlar).sort((a,b)=>b.tarih.localeCompare(a.tarih));
+    h += ns.length ? ns.map(n => `<div class="kart" onclick="notFormu('${n.id}')"><div class="bilgi">${tarihKisa(n.tarih)}</div><div class="not" style="margin-top:4px">${esc(n.metin)}</div></div>`).join("") : `<div class="bos">Henüz not yok.</div>`;
+    if(rn.length) h += `<h2>Doktorların söyledikleri</h2>` + rn.map(r => `<div class="kart" onclick="randevuFormu('${r.id}')"><div class="baslik">🩺 ${esc(r.bolum||"")} ${r.doktor?"· "+esc(r.doktor):""}</div><div class="bilgi">${tarihKisa(r.tarih)} · ${esc(r.hastane||"")}</div><div class="not">${esc(r.notlar)}</div></div>`).join("");
+  }
+  else {
+    h += `<div class="kart">
+      <div class="kisi"><div class="avatar">${esc(basHarf(k.ad))}</div><div><div class="ad">${esc(k.ad)}</div><div class="alt">${esc(k.yakinlik||"")}</div></div></div>
+      ${k.dogum ? `<p><b>Doğum tarihi:</b> ${tarihKisa(k.dogum)}</p>` : ""}
+      ${k.kan ? `<p><b>Kan grubu:</b> ${esc(k.kan)}</p>` : ""}
+      ${k.alerji ? `<p><b>Alerjiler:</b> ${esc(k.alerji)}</p>` : ""}
+      ${k.hastalik ? `<p><b>Kronik hastalıklar:</b> ${esc(k.hastalik)}</p>` : ""}
+      ${k.not ? `<div class="not">${esc(k.not)}</div>` : ""}
+      <div class="islemler"><button class="btn ikincil" onclick="kisiFormu('${k.id}')">✏️ Düzenle</button></div></div>`;
+  }
+  return h;
+}
+function sekme(s){ durum.sekme = s; ciz(); }
+function gunlukOzet(aktif){
+  let h = `<h2>Günlük kullanım düzeni</h2><div class="kart">`;
+  DILIMLER.forEach(dl => {
+    const sat = [];
+    aktif.forEach(il => (il.zamanlar||[]).forEach(z => { if((z.dilim||dilimBul(z.saat)) === dl.k) sat.push({il, saat:z.saat}); }));
+    if(!sat.length) return;
+    h += `<div style="margin-bottom:10px"><div class="baslik">${dl.s} ${dl.ad}</div>`;
+    ["ac","tok","yemek","fark"].forEach(ku => {
+      const a = sat.filter(x => (x.il.kullanim||"fark") === ku);
+      if(a.length) h += `<div style="margin:3px 0"><span class="etiket ${KULLANIM[ku].c}">${KULLANIM[ku].ad}</span> ${a.map(x => esc(x.il.ad)+" ("+x.saat+")").join(", ")}</div>`;
+    });
+    h += `</div>`;
+  });
+  return h + `</div>`;
+}
+function ilacKarti(il){
+  const zs = (il.zamanlar||[]).map(z => { const d = DILIMLER.find(x => x.k === (z.dilim||dilimBul(z.saat))); return d.s+" "+z.saat; }).join("  ");
+  let rapor = "";
+  if(il.rapor){
+    const f = gunFarki(bugunStr(), il.rapor);
+    rapor = `<div style="margin-top:4px"><span class="etiket ${f<0?"e-kirmizi":f<=30?"e-sari":"e-fark"}">📄 Rapor bitişi: ${tarihKisa(il.rapor)}${f<0?" (doldu)":""}</span></div>`;
+  }
+  return `<div class="kart" onclick="ilacFormu('${il.id}')" ${il.durdu?'style="opacity:.6"':""}>
+    <div class="baslik">💊 ${esc(il.ad)} <span class="bilgi">· ${esc(il.doz||"")}</span></div>
+    <div style="margin:4px 0"><span class="etiket ${KULLANIM[il.kullanim||"fark"].c}">${KULLANIM[il.kullanim||"fark"].ad}</span><span class="etiket e-fark">${siklikYaz(il)}</span></div>
+    ${zs ? `<div class="bilgi">${zs}</div>` : ""}
+    ${il.bit ? `<div class="bilgi">Bitiş: ${tarihKisa(il.bit)}</div>` : ""}
+    ${rapor}
+    ${il.not ? `<div class="not">${esc(il.not)}</div>` : ""}
+  </div>`;
+}
+
+/* ============ FORMLAR ============ */
+function pencere(html){
+  document.getElementById("pencere-yeri").innerHTML = `<div class="perde" onclick="if(event.target===this)kapat()"><div class="pencere">${html}</div></div>`;
+  document.body.style.overflow = "hidden";
+}
+function kapat(){ document.getElementById("pencere-yeri").innerHTML = ""; document.body.style.overflow = ""; }
+const deg = id => (document.getElementById(id).value || "").trim();
+function alan(id, etiket, deger, tip, ipucu, ek){
+  if(tip === "textarea") return `<label class="alan">${etiket}<textarea id="${id}" ${ek||""}>${esc(deger)}</textarea>${ipucu?`<div class="ipucu">${ipucu}</div>`:""}</label>`;
+  return `<label class="alan">${etiket}<input id="${id}" type="${tip||"text"}" value="${esc(deger)}" ${ek||""}>${ipucu?`<div class="ipucu">${ipucu}</div>`:""}</label>`;
+}
+function secimKutusu(id, secenekler, secili){
+  return `<div class="secim" id="${id}" data-deger="${esc(secili)}">` + secenekler.map(([k,a]) =>
+    `<button type="button" class="${k===secili?"on":""}" onclick="secimYap('${id}','${k}',this)">${a}</button>`).join("") + `</div>`;
+}
+function secimYap(id, k, b){ const s = document.getElementById(id); s.dataset.deger = k; s.querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b)); if(id === "f_siklik") document.getElementById("gunler-yer").hidden = k !== "gunler"; }
+function sil(liste, id, soru){
+  if(!confirm(soru)) return;
+  V[liste] = V[liste].filter(x => x.id !== id); kaydet(); kapat(); ciz();
+}
+
+/* Kişi */
+function kisiFormu(id){
+  const k = id ? kisi(id) : {};
+  pencere(`<h3>${id?"Kişiyi düzenle":"Yeni kişi"}</h3>
+    ${alan("f_ad","Adı",k.ad,"text","Örnek: Babam, Ahmet Yılmaz")}
+    ${alan("f_yak","Yakınlık",k.yakinlik,"text","Örnek: Baba, Anne, Kendim")}
+    ${alan("f_dog","Doğum tarihi (isteğe bağlı)",k.dogum,"date")}
+    ${alan("f_kan","Kan grubu (isteğe bağlı)",k.kan,"text","Örnek: A Rh+")}
+    ${alan("f_alr","Alerjiler (isteğe bağlı)",k.alerji,"text","Örnek: Penisilin")}
+    ${alan("f_has","Kronik hastalıklar (isteğe bağlı)",k.hastalik,"text","Örnek: Tansiyon, şeker")}
+    ${alan("f_not","Not (isteğe bağlı)",k.not,"textarea")}
+    <div class="satir"><button class="btn ikincil" onclick="kapat()">Vazgeç</button><button class="btn" onclick="kisiKaydet('${id||""}')">Kaydet</button></div>
+    ${id ? `<div style="margin-top:16px"><button class="btn tehlike genis" onclick="kisiSil('${id}')">🗑️ Kişiyi ve bütün kayıtlarını sil</button></div>` : ""}`);
+}
+function kisiKaydet(id){
+  const ad = deg("f_ad"); if(!ad){ alert("Lütfen bir ad yazın."); return; }
+  const k = id ? kisi(id) : {id:yeniId()};
+  Object.assign(k, {ad, yakinlik:deg("f_yak"), dogum:deg("f_dog"), kan:deg("f_kan"), alerji:deg("f_alr"), hastalik:deg("f_has"), not:deg("f_not")});
+  if(!id) V.kisiler.push(k);
+  kaydet(); kapat();
+  if(!id) git("kisi", {kid:k.id, sekme:"randevu"}); else ciz();
+}
+function kisiSil(id){
+  if(!confirm(kisi(id).ad + " ve ona ait bütün randevu, ilaç, tahlil ve notlar silinecek. Emin misiniz?")) return;
+  ["randevular","ilaclar","tahliller","notlar"].forEach(l => V[l] = V[l].filter(x => x.kid !== id));
+  V.kisiler = V.kisiler.filter(k => k.id !== id);
+  kaydet(); kapat(); gecmis.length = 0; durum = {ekran:"kisiler"}; ciz();
+}
+
+/* Randevu */
+function randevuFormu(id){
+  const r = id ? V.randevular.find(x => x.id === id) : {kid:durum.kid, durum:"bekliyor", hatirlat:"1g"};
+  const kid = r.kid || durum.kid;
+  pencere(`<h3>${id?"Randevu":"Yeni randevu"} · ${esc(kisi(kid).ad)}</h3>
+    ${alan("f_has","Hastane / klinik",r.hastane,"text","Örnek: Ankara Şehir Hastanesi")}
+    ${alan("f_bol","Bölüm",r.bolum,"text","Örnek: Kardiyoloji (kalp)")}
+    ${alan("f_dok","Doktor",r.doktor,"text","Örnek: Dr. Ayşe Demir")}
+    <div class="satir">${alan("f_tar","Tarih",r.tarih,"date")}${alan("f_saat","Saat",r.saat,"time")}</div>
+    ${alan("f_yer","Kat / oda / poliklinik (isteğe bağlı)",r.yer,"text")}
+    <label class="alan">Hatırlatma</label>
+    ${secimKutusu("f_hat", [["yok","Yok"],["2s","2 saat önce"],["1g","1 gün önce"],["ikisi","1 gün + 2 saat önce"]], r.hatirlat||"1g")}
+    <label class="alan">Durum</label>
+    ${secimKutusu("f_dur", [["bekliyor","Bekliyor"],["gidildi","Gidildi"],["iptal","İptal"]], r.durum||"bekliyor")}
+    ${alan("f_not","Doktor ne dedi? (muayeneden sonra)",r.notlar,"textarea","Doktorun söylediklerini, önerilerini, bir sonraki kontrol zamanını buraya yazın.")}
+    <div class="satir"><button class="btn ikincil" onclick="kapat()">Vazgeç</button><button class="btn" onclick="randevuKaydet('${id||""}','${kid}')">Kaydet</button></div>
+    ${id ? `<div class="islemler"><button class="btn ikincil kucuk" onclick="takvimeEkle('randevu','${id}')">📲 Telefonun takvimine alarm ekle</button>
+      <button class="btn ikincil kucuk" onclick="kapat();tahlilFormu(null,'${id}')">🧪 Bu doktorun istediği tahlili ekle</button>
+      <button class="btn tehlike kucuk" onclick="sil('randevular','${id}','Bu randevu silinsin mi?')">🗑️ Sil</button></div>` : ""}`);
+}
+function randevuKaydet(id, kid){
+  const tarih = deg("f_tar"); if(!tarih){ alert("Lütfen randevu tarihini seçin."); return; }
+  const r = id ? V.randevular.find(x => x.id === id) : {id:yeniId(), kid};
+  const eskiZaman = r.tarih + r.saat;
+  Object.assign(r, {hastane:deg("f_has"), bolum:deg("f_bol"), doktor:deg("f_dok"), tarih, saat:deg("f_saat"), yer:deg("f_yer"),
+    hatirlat:document.getElementById("f_hat").dataset.deger, durum:document.getElementById("f_dur").dataset.deger, notlar:deg("f_not")});
+  if(eskiZaman !== r.tarih + r.saat) Object.keys(V.bildirilen).forEach(k => { if(k.startsWith("r:"+r.id)) delete V.bildirilen[k]; });
+  if(!id) V.randevular.push(r);
+  kaydet(); kapat(); ciz();
+  if(!id && r.hatirlat !== "yok" && confirm("Randevu kaydedildi.\n\nUygulama kapalıyken de hatırlatılması için telefonunuzun takvimine alarm eklensin mi?")) takvimeEkle("randevu", r.id);
+}
+
+/* İlaç */
+function ilacFormu(id){
+  const il = id ? V.ilaclar.find(x => x.id === id) : {kid:durum.kid, kullanim:"tok", siklik:"hergun", zamanlar:[{dilim:"sabah",saat:"08:00"}], bas:bugunStr()};
+  const kid = il.kid || durum.kid;
+  const zs = {}; (il.zamanlar||[]).forEach(z => zs[z.dilim||dilimBul(z.saat)] = z.saat);
+  pencere(`<h3>${id?"İlaç":"Yeni ilaç"} · ${esc(kisi(kid).ad)}</h3>
+    ${alan("f_ad","İlacın adı",il.ad,"text","Örnek: Beloc 50 mg")}
+    ${alan("f_doz","Ne kadar?",il.doz,"text","Örnek: 1 tablet, yarım tablet, 10 damla")}
+    <label class="alan">Nasıl alınacak?</label>
+    ${secimKutusu("f_kul", [["ac","Aç karnına"],["tok","Tok karnına"],["yemek","Yemekle birlikte"],["fark","Fark etmez"]], il.kullanim||"tok")}
+    <label class="alan">Hangi saatlerde? <div class="ipucu">Kutucuğu işaretleyin, saati değiştirebilirsiniz.</div></label>
+    ${DILIMLER.map(d => `<div class="zaman"><input type="checkbox" id="z_${d.k}" ${zs[d.k]?"checked":""}><span>${d.s} ${d.ad}</span><input type="time" id="zs_${d.k}" value="${zs[d.k]||d.vars}"></div>`).join("")}
+    <label class="alan" style="margin-top:12px">Ne sıklıkla?</label>
+    ${secimKutusu("f_siklik", [["hergun","Her gün"],["gunasiri","Gün aşırı"],["gunler","Haftanın belli günleri"],["lazim","Gerektiğinde"]], il.siklik||"hergun")}
+    <div id="gunler-yer" ${il.siklik==="gunler"?"":"hidden"} class="secim">${[1,2,3,4,5,6,7].map(g => `<label class="zaman" style="margin:0;padding:6px 10px"><input type="checkbox" class="f_gun" value="${g}" ${(il.gunler||[]).includes(g)?"checked":""}> ${GUN_K[g]}</label>`).join("")}</div>
+    <div class="satir">${alan("f_bas","Başlangıç",il.bas,"date")}${alan("f_bit","Bitiş (isteğe bağlı)",il.bit,"date")}</div>
+    ${alan("f_rap","İlaç raporu bitiş tarihi (varsa)",il.rapor,"date","Rapor bitmeden 30 gün önce Bugün ekranında uyarı çıkar.")}
+    ${alan("f_not","Notlar (isteğe bağlı)",il.not,"textarea","Örnek: Doktor 1 ay sonra dozu düşürecek. Greyfurt suyuyla içilmez.")}
+    <label class="alan" style="display:flex;align-items:center;gap:10px"><input type="checkbox" id="f_durdu" style="width:24px;height:24px;min-height:0;margin:0" ${il.durdu?"checked":""}> Bu ilacı artık kullanmıyor</label>
+    <div class="satir"><button class="btn ikincil" onclick="kapat()">Vazgeç</button><button class="btn" onclick="ilacKaydet('${id||""}','${kid}')">Kaydet</button></div>
+    ${id ? `<div class="islemler"><button class="btn ikincil kucuk" onclick="takvimeEkle('ilac','${id}')">📲 Telefonun takvimine ilaç alarmı ekle</button>
+      <button class="btn tehlike kucuk" onclick="sil('ilaclar','${id}','Bu ilaç silinsin mi?')">🗑️ Sil</button></div>` : ""}`);
+}
+function ilacKaydet(id, kid){
+  const ad = deg("f_ad"); if(!ad){ alert("Lütfen ilacın adını yazın."); return; }
+  const siklik = document.getElementById("f_siklik").dataset.deger;
+  const zamanlar = DILIMLER.filter(d => document.getElementById("z_"+d.k).checked).map(d => ({dilim:d.k, saat:document.getElementById("zs_"+d.k).value || d.vars}));
+  if(siklik !== "lazim" && !zamanlar.length){ alert("Lütfen en az bir saat işaretleyin (ya da 'Gerektiğinde' seçin)."); return; }
+  const gunler = [...document.querySelectorAll(".f_gun:checked")].map(x => +x.value);
+  if(siklik === "gunler" && !gunler.length){ alert("Lütfen haftanın hangi günleri olduğunu işaretleyin."); return; }
+  const il = id ? V.ilaclar.find(x => x.id === id) : {id:yeniId(), kid};
+  Object.assign(il, {ad, doz:deg("f_doz"), kullanim:document.getElementById("f_kul").dataset.deger, zamanlar, siklik, gunler,
+    bas:deg("f_bas") || bugunStr(), bit:deg("f_bit"), rapor:deg("f_rap"), not:deg("f_not"), durdu:document.getElementById("f_durdu").checked});
+  if(!id) V.ilaclar.push(il);
+  kaydet(); kapat(); ciz();
+  if(!id && siklik !== "lazim" && confirm("İlaç kaydedildi.\n\nUygulama kapalıyken de ilaç saatinde haber verilmesi için telefonunuzun takvimine alarm eklensin mi?")) takvimeEkle("ilac", il.id);
+}
+
+/* Tahlil */
+function tahlilFormu(id, randevuId){
+  let t;
+  if(id) t = V.tahliller.find(x => x.id === id);
+  else { const r = randevuId ? V.randevular.find(x => x.id === randevuId) : null;
+    t = {kid: r ? r.kid : durum.kid, durum:"bekliyor", doktor: r ? [r.doktor, r.bolum].filter(Boolean).join(" · ") : "", yer: r ? r.hastane : "", hatirlat:"1g"}; }
+  const kid = t.kid;
+  pencere(`<h3>${id?"Tahlil":"Yeni tahlil"} · ${esc(kisi(kid).ad)}</h3>
+    ${alan("f_ad","Hangi tahlil?",t.ad,"text","Örnek: Kan tahlili (açlık şekeri, kolesterol), EKG, Efor testi, MR")}
+    ${alan("f_dok","İsteyen doktor",t.doktor,"text")}
+    ${alan("f_yer","Nerede yapılacak?",t.yer,"text")}
+    <div class="satir">${alan("f_tar","Randevu tarihi",t.tarih,"date")}${alan("f_saat","Saat",t.saat,"time")}</div>
+    ${alan("f_haz","Hazırlık (isteğe bağlı)",t.hazirlik,"text","Örnek: 12 saat aç gelinecek")}
+    <label class="alan">Hatırlatma</label>
+    ${secimKutusu("f_hat", [["yok","Yok"],["2s","2 saat önce"],["1g","1 gün önce"],["ikisi","1 gün + 2 saat önce"]], t.hatirlat||"1g")}
+    <label class="alan">Durum</label>
+    ${secimKutusu("f_dur", [["bekliyor","Yapılacak"],["gidildi","Yapıldı"],["iptal","İptal"]], t.durum||"bekliyor")}
+    ${alan("f_son","Sonuç / not",t.sonuc,"textarea","Sonuçları ya da doktorun yorumunu buraya yazabilirsiniz.")}
+    <div class="satir"><button class="btn ikincil" onclick="kapat()">Vazgeç</button><button class="btn" onclick="tahlilKaydet('${id||""}','${kid}')">Kaydet</button></div>
+    ${id ? `<div class="islemler">${t.tarih?`<button class="btn ikincil kucuk" onclick="takvimeEkle('tahlil','${id}')">📲 Telefonun takvimine alarm ekle</button>`:""}
+      <button class="btn tehlike kucuk" onclick="sil('tahliller','${id}','Bu tahlil silinsin mi?')">🗑️ Sil</button></div>` : ""}`);
+}
+function tahlilKaydet(id, kid){
+  const ad = deg("f_ad"); if(!ad){ alert("Lütfen tahlilin adını yazın."); return; }
+  const t = id ? V.tahliller.find(x => x.id === id) : {id:yeniId(), kid};
+  const eskiZaman = t.tarih + t.saat;
+  Object.assign(t, {ad, doktor:deg("f_dok"), yer:deg("f_yer"), tarih:deg("f_tar"), saat:deg("f_saat"), hazirlik:deg("f_haz"),
+    hatirlat:document.getElementById("f_hat").dataset.deger, durum:document.getElementById("f_dur").dataset.deger, sonuc:deg("f_son")});
+  if(eskiZaman !== t.tarih + t.saat) Object.keys(V.bildirilen).forEach(k => { if(k.startsWith("t:"+t.id)) delete V.bildirilen[k]; });
+  if(!id) V.tahliller.push(t);
+  kaydet(); kapat();
+  if(durum.ekran === "kisi") durum.sekme = "tahlil";
+  ciz();
+  if(!id && t.tarih && t.hatirlat !== "yok" && confirm("Tahlil kaydedildi.\n\nTelefonunuzun takvimine alarm eklensin mi?")) takvimeEkle("tahlil", t.id);
+}
+
+/* Not */
+function notFormu(id){
+  const n = id ? V.notlar.find(x => x.id === id) : {kid:durum.kid, tarih:bugunStr()};
+  pencere(`<h3>${id?"Not":"Yeni not"} · ${esc(kisi(n.kid).ad)}</h3>
+    ${alan("f_tar","Tarih",n.tarih,"date")}
+    ${alan("f_met","Not",n.metin,"textarea","Örnek: Tansiyonu sabah 13/8 ölçüldü. Baş dönmesi şikâyeti var.","style='min-height:180px'")}
+    <div class="satir"><button class="btn ikincil" onclick="kapat()">Vazgeç</button><button class="btn" onclick="notKaydet('${id||""}','${n.kid}')">Kaydet</button></div>
+    ${id ? `<div style="margin-top:12px"><button class="btn tehlike genis" onclick="sil('notlar','${id}','Bu not silinsin mi?')">🗑️ Sil</button></div>` : ""}`);
+}
+function notKaydet(id, kid){
+  const metin = deg("f_met"); if(!metin){ alert("Not boş olamaz."); return; }
+  const n = id ? V.notlar.find(x => x.id === id) : {id:yeniId(), kid};
+  Object.assign(n, {tarih:deg("f_tar") || bugunStr(), metin});
+  if(!id) V.notlar.push(n);
+  kaydet(); kapat(); ciz();
+}
+
+/* ============ TELEFON TAKVİMİNE ALARM (.ics) ============ */
+function icsMetin(s){ return String(s||"").replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\r?\n/g,"\\n"); }
+function icsZaman(tarih, saat){ return tarih.replace(/-/g,"") + "T" + (saat||"09:00").replace(":","") + "00"; }
+function icsSatir(s){ // RFC 5545: 75 baytta katla, harfi bölmeden
+  const enc = new TextEncoder(), out = []; let satir = "", bayt = 0, sinir = 75;
+  for(const ch of Array.from(s)){
+    const n = enc.encode(ch).length;
+    if(bayt + n > sinir){ out.push(satir); satir = " "; bayt = 1; sinir = 75; }
+    satir += ch; bayt += n;
+  }
+  out.push(satir); return out.join("\r\n");
+}
+function icsDamga(){ const d = new Date(); return d.getUTCFullYear()+iki(d.getUTCMonth()+1)+iki(d.getUTCDate())+"T"+iki(d.getUTCHours())+iki(d.getUTCMinutes())+iki(d.getUTCSeconds())+"Z"; }
+function takvimeEkle(tur, id){
+  const L = ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//BEKAPSAGLIK//TR","CALSCALE:GREGORIAN","METHOD:PUBLISH"];
+  let dosya = "bekapsaglik";
+  const alarm = (tetik, mesaj) => ["BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:"+icsMetin(mesaj),"TRIGGER:"+tetik,"END:VALARM"];
+  if(tur === "randevu" || tur === "tahlil"){
+    const o = (tur === "randevu" ? V.randevular : V.tahliller).find(x => x.id === id);
+    if(!o.tarih){ alert("Önce tarih girin."); return; }
+    const k = kisi(o.kid).ad;
+    const baslik = tur === "randevu" ? `${k} · ${o.bolum||"Doktor"} randevusu${o.doktor?" ("+o.doktor+")":""}` : `${k} · Tahlil: ${o.ad}`;
+    const acik = [tur==="randevu" ? o.yer : "", o.hazirlik ? "Hazırlık: "+o.hazirlik : "", "BEKAPSAĞLIK"].filter(Boolean).join("\n");
+    L.push("BEGIN:VEVENT","UID:"+o.id+"@bekapsaglik","DTSTAMP:"+icsDamga(),"DTSTART:"+icsZaman(o.tarih,o.saat),"DURATION:PT1H",
+      "SUMMARY:"+icsMetin(baslik), "LOCATION:"+icsMetin(tur==="randevu"?o.hastane:o.yer), "DESCRIPTION:"+icsMetin(acik));
+    const h = o.hatirlat || "1g";
+    if(h === "1g" || h === "ikisi") L.push(...alarm("-P1D", "Yarın: "+baslik));
+    if(h === "2s" || h === "ikisi") L.push(...alarm("-PT2H", "2 saat sonra: "+baslik));
+    if(h === "yok") L.push(...alarm("-PT1H", baslik));
+    L.push("END:VEVENT");
+    dosya = (tur === "randevu" ? "randevu-" : "tahlil-") + o.tarih;
+  } else {
+    const il = V.ilaclar.find(x => x.id === id);
+    const k = kisi(il.kid).ad;
+    if(il.siklik === "lazim" || !(il.zamanlar||[]).length){ alert("'Gerektiğinde' alınan ilaç için saatli alarm kurulmaz."); return; }
+    const bas = il.bas && il.bas > bugunStr() ? il.bas : bugunStr();
+    let kural = "FREQ=DAILY";
+    if(il.siklik === "gunasiri"){
+      kural = "FREQ=DAILY;INTERVAL=2";
+    } else if(il.siklik === "gunler"){
+      const BY = {1:"MO",2:"TU",3:"WE",4:"TH",5:"FR",6:"SA",7:"SU"};
+      kural = "FREQ=WEEKLY;BYDAY=" + (il.gunler||[]).sort().map(g => BY[g]).join(",");
+    }
+    if(il.bit) kural += ";UNTIL=" + il.bit.replace(/-/g,"") + "T235959";
+    // gün aşırıda doğru günden başla
+    let ilk = bas;
+    if(il.siklik === "gunasiri" && il.bas && gunFarki(il.bas, ilk) % 2 !== 0){ const d = tarihObj(ilk); d.setDate(d.getDate()+1); ilk = bugunStr(d); }
+    il.zamanlar.forEach(z => {
+      const baslik = `💊 ${k}: ${il.ad}${il.doz?" ("+il.doz+")":""} · ${KULLANIM[il.kullanim||"fark"].ad}`;
+      L.push("BEGIN:VEVENT","UID:"+il.id+"-"+z.saat.replace(":","")+"@bekapsaglik","DTSTAMP:"+icsDamga(),"DTSTART:"+icsZaman(ilk, z.saat),"DURATION:PT10M",
+        "RRULE:"+kural,"SUMMARY:"+icsMetin(baslik),"DESCRIPTION:"+icsMetin([il.not, "BEKAPSAĞLIK"].filter(Boolean).join("\n")), ...alarm("PT0M", baslik), "END:VEVENT");
+    });
+    dosya = "ilac-" + il.ad.replace(/[^A-Za-z0-9ÇĞİÖŞÜçğıöşü]+/g,"-").slice(0,30);
+  }
+  L.push("END:VCALENDAR");
+  const metin = L.map(icsSatir).join("\r\n") + "\r\n";
+  const blob = new Blob([metin], {type:"text/calendar;charset=utf-8"});
+  const ad = dosya + ".ics";
+  indir(blob, ad);
+}
+function indir(blob, ad){
+  const u = URL.createObjectURL(blob);
+  const a = document.createElement("a"); a.href = u; a.download = ad; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(u), 60000);
+  serit("📲 Takvim dosyası hazır", "Açılan dosyada “Takvime ekle”ye dokunun. (Dosya inenlere düştüyse oradan açın.)");
+}
+
+/* ============ UYGULAMA AÇIKKEN BİLDİRİM ============ */
+function serit(b, m){
+  const y = document.getElementById("serit-yeri");
+  y.innerHTML = `<div class="bildirim-serit" onclick="this.remove()"><b>${esc(b)}</b>${esc(m)}</div>`;
+  clearTimeout(serit.t); serit.t = setTimeout(() => { y.innerHTML = ""; }, 12000);
+}
+async function bildir(baslik, mesaj, etiket){
+  serit(baslik, mesaj);
+  if(navigator.vibrate) navigator.vibrate([300,150,300]);
+  if(!("Notification" in window) || Notification.permission !== "granted") return;
+  try{
+    const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration();
+    if(reg) reg.showNotification(baslik, {body:mesaj, tag:etiket, icon:"ikon-192.png", badge:"ikon-192.png", requireInteraction:true});
+    else new Notification(baslik, {body:mesaj, tag:etiket});
+  }catch(e){}
+}
+function kontrol(){
+  const simdi = new Date(), gun = bugunStr(simdi), dk = simdi.getHours()*60 + simdi.getMinutes();
+  let degisti = false;
+  // ilaç saatleri (saatinden itibaren 60 dk içinde, verilmediyse bir kez)
+  gunlukListe(gun).forEach(x => {
+    const [h,m] = x.saat.split(":").map(Number), t = h*60+m;
+    const k = "i:"+gun+":"+x.anahtar;
+    if(dk >= t && dk < t+60 && !(V.alinan[gun]||{})[x.anahtar] && !V.bildirilen[k]){
+      V.bildirilen[k] = 1; degisti = true;
+      bildir("💊 İlaç saati: " + kisi(x.il.kid).ad, `${x.il.ad} ${x.il.doz||""} · ${KULLANIM[x.il.kullanim||"fark"].ad} (${x.saat})`, k);
+    }
+  });
+  // randevu / tahlil: 1 gün ve 2 saat önce
+  const olaylar = [...V.randevular.map(o => ({o, t:"r"})), ...V.tahliller.map(o => ({o, t:"t"}))];
+  olaylar.forEach(({o,t}) => {
+    if(o.durum !== "bekliyor" || !o.tarih || o.hatirlat === "yok") return;
+    const z = tarihObj(o.tarih); const [h,m] = (o.saat||"09:00").split(":").map(Number); z.setHours(h, m, 0, 0);
+    const fark = (z - simdi) / 60000;
+    const ad = t === "r" ? `${o.bolum||"Doktor"} randevusu${o.doktor?" · "+o.doktor:""}` : `Tahlil: ${o.ad}`;
+    const ust = kisi(o.kid).ad + " · " + ad;
+    const yer = (t === "r" ? o.hastane : o.yer) || "";
+    if((o.hatirlat === "1g" || o.hatirlat === "ikisi") && fark <= 1440 && fark > 120 && !V.bildirilen[t+":"+o.id+":1g"]){
+      V.bildirilen[t+":"+o.id+":1g"] = 1; degisti = true; bildir("📅 Yarın: " + ust, `${tarihKisa(o.tarih)} saat ${o.saat||"?"} · ${yer}`, t+o.id);
+    }
+    if((o.hatirlat === "2s" || o.hatirlat === "ikisi") && fark <= 120 && fark > -30 && !V.bildirilen[t+":"+o.id+":2s"]){
+      V.bildirilen[t+":"+o.id+":2s"] = 1; degisti = true; bildir("⏰ Yaklaşıyor: " + ust, `Saat ${o.saat||"?"} · ${yer}`, t+o.id);
+    }
+  });
+  // eski bildirim kayıtlarını temizle
+  Object.keys(V.bildirilen).forEach(k => { if(k.startsWith("i:") && gunFarki(k.slice(2,12), gun) > 3){ delete V.bildirilen[k]; degisti = true; } });
+  if(degisti) kaydet();
+}
+
+/* ============ AYARLAR ============ */
+function ekranAyarlar(){
+  const izin = !("Notification" in window) ? "yok" : Notification.permission;
+  const ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
+  const kurulu = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+  return `
+  <div class="kart"><div class="baslik">🔔 Bildirimler</div>
+    <p class="bilgi">Uygulama <b>açıkken</b> ilaç saatlerinde ve randevulardan önce ekranda uyarı çıkar, telefon titrer.</p>
+    <p class="bilgi">Uygulama <b>kapalıyken</b> de haber almak için her ilacın ve randevunun içindeki <b>“📲 Telefonun takvimine alarm ekle”</b> düğmesini kullanın. Alarmı telefonunuzun kendi takvimi çalar.</p>
+    ${izin === "granted" ? `<p><span class="etiket e-yesil">Bildirim izni verildi</span></p>` :
+      izin === "yok" ? `<p class="bilgi">Bu tarayıcı bildirim desteklemiyor${ios && !kurulu ? " — iPhone'da önce uygulamayı ana ekrana ekleyin" : ""}.</p>` :
+      `<button class="btn genis" onclick="izinIste()">Bildirimlere izin ver</button>`}
+  </div>
+  <div class="kart"><div class="baslik">💾 Yedek</div>
+    <p class="bilgi">Bütün bilgiler yalnız bu telefonda durur. Telefon değişirse ya da tarayıcı verileri silinirse bilgiler kaybolur. Ayda bir yedek almanızı öneririz.</p>
+    <div class="islemler"><button class="btn" onclick="yedekAl()">⬇️ Yedek al</button>
+    <button class="btn ikincil" onclick="document.getElementById('yedek-dosya').click()">⬆️ Yedekten geri yükle</button></div>
+    <input type="file" id="yedek-dosya" accept=".json,application/json" hidden onchange="yedekYukle(this)">
+    ${V.ayar.sonYedek ? `<p class="kucuk-yazi">Son yedek: ${tarihKisa(V.ayar.sonYedek)}</p>` : ""}
+  </div>
+  ${!kurulu ? `<div class="kart"><div class="baslik">📱 Ana ekrana ekle</div>
+    <p class="bilgi">${ios ? "Safari'de alttaki <b>Paylaş</b> (kutudan çıkan ok) düğmesine, sonra <b>“Ana Ekrana Ekle”</b>ye dokunun." :
+      "Chrome'da sağ üstteki <b>⋮</b> menüsüne, sonra <b>“Ana ekrana ekle”</b> ya da <b>“Uygulamayı yükle”</b>ye dokunun."}
+    Böylece BEKAPSAĞLIK diğer uygulamalar gibi simgesiyle açılır ve internetsiz çalışır.</p></div>` : ""}
+  <div class="kart"><div class="baslik">ℹ️ Hakkında</div>
+    <p class="bilgi">BEKAPSAĞLIK · ${V.kisiler.length} kişi · ${V.ilaclar.length} ilaç · ${V.randevular.length} randevu · ${V.tahliller.length} tahlil</p>
+    <p class="bilgi">Bu uygulama hiçbir yerden veri çekmez ve hiçbir yere veri göndermez. Tıbbi tavsiye vermez; ilaç ve tedavi konusunda her zaman doktorunuza danışın.</p>
+    <button class="btn tehlike kucuk" onclick="hepsiniSil()">Bütün bilgileri sil</button></div>`;
+}
+function izinIste(){ Notification.requestPermission().then(() => ciz()); }
+function yedekAl(){
+  V.ayar.sonYedek = bugunStr(); kaydet();
+  const blob = new Blob([JSON.stringify(V, null, 1)], {type:"application/json"});
+  const ad = "bekapsaglik-yedek-" + bugunStr() + ".json";
+  try{ const f = new File([blob], ad, {type:"application/json"});
+    if(navigator.canShare && navigator.canShare({files:[f]})){ navigator.share({files:[f], title:ad}).catch(()=>{}); ciz(); return; } }catch(e){}
+  const u = URL.createObjectURL(blob), a = document.createElement("a"); a.href = u; a.download = ad; document.body.appendChild(a); a.click(); a.remove();
+  ciz();
+}
+function yedekYukle(inp){
+  const f = inp.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try{
+      const d = JSON.parse(r.result);
+      if(!Array.isArray(d.kisiler)) throw 0;
+      if(!confirm(`Yedekte ${d.kisiler.length} kişi var. Şu anki bilgilerin YERİNE yüklensin mi?`)) return;
+      V = Object.assign(bos(), d); kaydet(); alert("Yedek yüklendi."); gecmis.length = 0; durum = {ekran:"bugun"}; ciz();
+    }catch(e){ alert("Bu dosya BEKAPSAĞLIK yedeği değil."); }
+  };
+  r.readAsText(f); inp.value = "";
+}
+function hepsiniSil(){
+  if(!confirm("Bütün kişiler, ilaçlar, randevular ve tahliller silinecek. Emin misiniz?")) return;
+  if(!confirm("Son kez soruyorum: geri alınamaz. Silinsin mi?")) return;
+  V = bos(); kaydet(); gecmis.length = 0; durum = {ekran:"bugun"}; ciz();
+}
+
+/* ============ BAŞLAT ============ */
+ciz();
+kontrol();
+setInterval(() => { kontrol(); }, 30000);
+let sonGun = bugunStr();
+setInterval(() => { if(bugunStr() !== sonGun){ sonGun = bugunStr(); if(durum.ekran === "bugun") ciz(); } }, 60000);
+document.addEventListener("visibilitychange", () => { if(!document.hidden){ kontrol(); if(durum.ekran === "bugun") ciz(); } });
+if("serviceWorker" in navigator && location.protocol !== "file:"){ navigator.serviceWorker.register("sw.js").catch(()=>{}); }
+</script>
+</body>
+</html>
