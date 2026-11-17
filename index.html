@@ -171,6 +171,16 @@ body.karsilama-modu{padding-bottom:0;background:linear-gradient(180deg,#0f766e 0
 .isik-btn{position:absolute;right:14px;top:calc(14px + env(safe-area-inset-top));border:0;border-radius:999px;padding:10px 14px;font-size:16px;font-weight:700;background:rgba(15,23,42,.75);color:#fff}
 .isik-btn.on{background:#facc15;color:#111}
 .sayac{position:absolute;left:14px;top:calc(14px + env(safe-area-inset-top));border-radius:999px;padding:10px 14px;font-size:16px;font-weight:800;background:#15803d;color:#fff}
+.dolap-ozet{background:#fff;border-radius:14px;padding:12px 14px;margin-bottom:10px;font-size:15px;line-height:1.9;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.grup{cursor:pointer}
+.grup-ust{display:flex;align-items:flex-start;gap:10px}
+.grup-ad{flex:1;font-weight:700;font-size:16px}
+.grup-sayi{flex:0 0 auto;text-align:center;background:var(--ana-acik);color:var(--ana);border-radius:12px;padding:4px 10px;line-height:1.1}
+.grup-sayi b{display:block;font-size:22px}
+.grup-sayi span{font-size:12px;font-weight:700}
+.grup-alt{display:flex;flex-wrap:wrap;align-items:center;gap:4px 0;margin-top:6px}
+.ok-yazi{margin-left:auto;color:var(--ana);font-weight:700;font-size:14px;padding-left:8px}
+.tarayici .cerceve{transition:border-color .15s}
 </style>
 </head>
 <body>
@@ -265,8 +275,8 @@ document.querySelectorAll("nav.alt button").forEach(b => b.onclick = () => { gec
 
 function ciz(){
   const E = document.getElementById("ekran");
-  document.querySelectorAll("nav.alt button").forEach(b => b.classList.toggle("on", b.dataset.git === (durum.ekran === "kisi" ? "kisiler" : durum.ekran)));
-  document.getElementById("geri").hidden = durum.ekran !== "kisi";
+  document.querySelectorAll("nav.alt button").forEach(b => b.classList.toggle("on", b.dataset.git === (durum.ekran === "kisi" ? "kisiler" : durum.ekran === "dolapGrup" ? "dolap" : durum.ekran)));
+  document.getElementById("geri").hidden = !["kisi","dolapGrup"].includes(durum.ekran);
   let bas = "BEKAPSAĞLIK";
   const kars = durum.ekran === "bugun" && karsilamaGoster();
   document.body.classList.toggle("karsilama-modu", kars);
@@ -275,6 +285,7 @@ function ciz(){
   else if(durum.ekran === "kisiler"){ bas = "Kişiler"; E.innerHTML = ekranKisiler(); }
   else if(durum.ekran === "kisi"){ bas = kisi(durum.kid).ad; E.innerHTML = ekranKisi(); }
   else if(durum.ekran === "dolap"){ bas = "İlaç Dolabı"; E.innerHTML = ekranDolap(); }
+  else if(durum.ekran === "dolapGrup"){ const h = ekranDolapGrup(); if(h === null){ geri(); return; } bas = "İlaç Dolabı"; E.innerHTML = h; }
   else if(durum.ekran === "ayarlar"){ bas = "Ayarlar"; E.innerHTML = ekranAyarlar(); listeBilgisi(); }
   document.getElementById("baslik").textContent = bas;
 }
@@ -953,6 +964,30 @@ async function resimdenOku(dosya){
   }catch(e){}
   return null;
 }
+/* Okuma sesi (deklanşör benzeri). Telefon sessizdeyse iPhone çalmayabilir. */
+let _ses = null;
+function sesHazirla(){ try{ _ses = _ses || new (window.AudioContext || window.webkitAudioContext)(); if(_ses.state === "suspended") _ses.resume(); }catch(e){} }
+function sesCal(tur){
+  if(!_ses) return;
+  try{
+    const c = _ses, t0 = c.currentTime + 0.01;
+    if(tur === "ok"){
+      [0, 0.075].forEach((d, k) => {
+        const n = Math.floor(c.sampleRate * 0.05), b = c.createBuffer(1, n, c.sampleRate), v = b.getChannelData(0);
+        for(let i = 0; i < n; i++) v[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 3);
+        const s = c.createBufferSource(); s.buffer = b;
+        const f = c.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = k ? 2500 : 1800; f.Q.value = 0.7;
+        const g = c.createGain(); g.gain.value = 1.6;
+        s.connect(f); f.connect(g); g.connect(c.destination); s.start(t0 + d);
+      });
+    } else {
+      const o = c.createOscillator(), g = c.createGain();
+      o.type = "sine"; o.frequency.value = tur === "tekrar" ? 660 : 200;
+      g.gain.setValueAtTime(0.3, t0); g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.3);
+      o.connect(g); g.connect(c.destination); o.start(t0); o.stop(t0 + 0.32);
+    }
+  }catch(e){}
+}
 /* Kamera ekranı.
    Tek okuma: karekodOku() → okunan yazı (ya da null).
    Sürekli okuma: karekodOku({isle: async yazi => "ekranda gösterilecek mesaj"}) → "Bitti"ye basılınca null döner. */
@@ -975,14 +1010,17 @@ function karekodOku(sec){
       if(akis) akis.getTracks().forEach(t => t.stop());
       d.remove(); bitti(sonuc);
     };
+    const isikla = renk => { const c = d.querySelector(".cerceve"); if(!c) return; c.style.borderColor = renk; c.style.borderWidth = "8px"; setTimeout(() => { c.style.borderColor = ""; c.style.borderWidth = ""; }, 600); };
     const bulundu = async t => {
       if(navigator.vibrate) navigator.vibrate(120);
-      if(!surekli){ kapat(t); return; }
+      if(!surekli){ sesCal("ok"); isikla("#22c55e"); setTimeout(() => kapat(t), 250); return; }
       const simdi = Date.now();
       if(t === sonYazi && simdi - sonZaman < 4000) return;   // aynı kutu hâlâ kameranın önünde
       sonYazi = t; sonZaman = simdi; bekle = simdi + 1200;   // bir sonraki kutu için kısa ara
       let m = ""; try{ m = await sec.isle(t); }catch(e){ m = "Bir hata oldu, tekrar okutun."; }
-      if(m && m.startsWith("✅")){ sayi++; const s = d.querySelector("#t_sayac"); if(s) s.textContent = sayi + " kutu eklendi"; }
+      if(m && m.startsWith("✅")){ sayi++; const s = d.querySelector("#t_sayac"); if(s) s.textContent = sayi + " kutu eklendi"; sesCal("ok"); isikla("#22c55e"); }
+      else if(m && m.startsWith("ℹ️")){ sesCal("tekrar"); isikla("#facc15"); }
+      else { sesCal("hata"); isikla("#ef4444"); }
       yazi.innerHTML = m + `<br><span class="kucuk-yazi" style="color:#cbd5e1">Sıradaki kutuyu okutun ya da <b>Bitti</b>'ye dokunun.</span>`;
     };
     d.querySelector("#t_iptal").onclick = () => kapat(null);
@@ -995,7 +1033,7 @@ function karekodOku(sec){
       if(t) bulundu(t);
       else yazi.innerHTML = "<b>Fotoğrafta kod bulunamadı.</b><br>Kare kodu ortalayıp yakından, net ve iyi ışıkta tekrar çekin.";
     };
-    wasmYukle().catch(() => {});
+    sesHazirla(); wasmYukle().catch(() => {});
     try{
       akis = await navigator.mediaDevices.getUserMedia({audio:false, video:{facingMode:{ideal:"environment"}, width:{ideal:1920}, height:{ideal:1080}}});
       if(dur){ akis.getTracks().forEach(t => t.stop()); return; }
@@ -1050,25 +1088,51 @@ function ekranDolap(){
   return h;
 }
 function dolapListe(){ const y = document.getElementById("dolap_liste"); if(y) y.innerHTML = dolapListeHTML(); }
+function grupAnahtar(s){ return kucuk(s.ad).replace(/\s+/g, " ").trim(); }
+let _gruplar = [];
+function grupOzet(kutular){
+  const say = f => kutular.filter(f).reduce((t,s) => t + s.adet, 0), g = s => sktDurum(s.skt).g;
+  return {top: say(() => true), gec: say(s => s.skt && g(s) < 0), yak: say(s => s.skt && g(s) >= 0 && g(s) <= 60),
+          tarih: new Set(kutular.map(s => s.skt || "-")).size};
+}
 function dolapListeHTML(){
   const q = kucuk(durum.ara||"").trim();
   const st = V.stok.filter(s => !q || kucuk(s.ad + " " + (s.etken||"") + " " + (s.yer||"") + " " + (s.not||"")).includes(q));
-  const g = s => sktDurum(s.skt).g;
-  const gecmisL = st.filter(s => g(s) < 0).sort((a,b) => g(a) - g(b));
-  const yakin = st.filter(s => g(s) >= 0 && g(s) <= 60).sort((a,b) => g(a) - g(b));
-  const diger = st.filter(s => g(s) > 60).sort((a,b) => a.ad.localeCompare(b.ad, "tr"));
-  let h = "";
-  if(gecmisL.length) h += `<h2>⚠️ Tarihi geçmiş — kullanmayın</h2>` + gecmisL.map(stokKarti).join("");
-  if(yakin.length) h += `<h2>⏳ 60 gün içinde tarihi dolacak</h2>` + yakin.map(stokKarti).join("");
-  if(diger.length) h += `<h2>✅ Kullanılabilir</h2>` + diger.map(stokKarti).join("");
-  return h || `<div class="bos">Aramaya uyan ilaç yok.</div>`;
+  const m = new Map();
+  st.forEach(s => { const k = grupAnahtar(s); if(!m.has(k)) m.set(k, {k, ad:s.ad, etken:s.etken, kutular:[]}); m.get(k).kutular.push(s); });
+  _gruplar = [...m.values()].sort((a,b) => a.ad.localeCompare(b.ad, "tr"));
+  if(!_gruplar.length) return `<div class="bos">Aramaya uyan ilaç yok.</div>`;
+  const o = grupOzet(st);
+  let h = `<div class="dolap-ozet"><b>${_gruplar.length}</b> çeşit ilaç · <b>${o.top}</b> kutu`
+    + (o.gec ? ` · <span class="etiket e-kirmizi">⚠️ ${o.gec} kutunun tarihi geçmiş</span>` : "")
+    + (o.yak ? ` · <span class="etiket e-sari">⏳ ${o.yak} kutu yakında</span>` : "") + `</div>`;
+  _gruplar.forEach((gr, i) => {
+    const z = grupOzet(gr.kutular);
+    h += `<div class="kart grup" onclick="grupAc(${i})">
+      <div class="grup-ust"><div class="grup-ad">💊 ${esc(gr.ad)}</div><div class="grup-sayi"><b>${z.top}</b><span>kutu</span></div></div>
+      ${gr.etken ? `<div class="bilgi">${esc(gr.etken)}</div>` : ""}
+      <div class="grup-alt">${z.tarih > 1 ? `<span class="etiket e-fark">${z.tarih} farklı tarih</span>` : ""}${z.gec ? `<span class="etiket e-kirmizi">⚠️ ${z.gec} kutu tarihi geçmiş</span>` : ""}${z.yak ? `<span class="etiket e-sari">⏳ ${z.yak} kutu 60 gün içinde</span>` : ""}${!z.gec && !z.yak ? `<span class="etiket e-yesil">✅ Tarihi uygun</span>` : ""}<span class="ok-yazi">Kutuları gör ›</span></div>
+    </div>`;
+  });
+  return h;
 }
-function stokKarti(s){
+function grupAc(i){ git("dolapGrup", {grup:_gruplar[i].k}); }
+function ekranDolapGrup(){
+  const ks = V.stok.filter(s => grupAnahtar(s) === durum.grup).sort((a,b) => (a.skt || "9999").localeCompare(b.skt || "9999"));
+  if(!ks.length) return null;
+  const z = grupOzet(ks);
+  let h = `<button class="btn ikincil" style="margin-bottom:12px" onclick="geri()">‹ Dolaba dön</button>
+    <div class="kart"><div class="baslik">💊 ${esc(ks[0].ad)}</div>${ks[0].etken ? `<div class="bilgi">${esc(ks[0].etken)}</div>` : ""}
+    <div style="margin-top:6px"><span class="etiket e-mavi">Toplam ${z.top} kutu</span>${z.tarih > 1 ? `<span class="etiket e-fark">${z.tarih} farklı son kullanma tarihi</span>` : ""}</div></div>
+    <h2>Kutular (son kullanma tarihine göre)</h2>`;
+  return h + ks.map(s => stokKarti(s, true)).join("");
+}
+function stokKarti(s, kisa){
   const d = sktDurum(s.skt);
   return `<div class="kart" onclick="stokFormu('${s.id}')">
-    <div class="baslik">💊 ${esc(s.ad)}</div>
-    ${s.etken ? `<div class="bilgi">${esc(s.etken)}</div>` : ""}
-    <div style="margin-top:6px"><span class="etiket ${d.c}">SKT: ${s.skt ? sktYaz(s.skt) : "girilmedi"}${d.t ? " · " + d.t : ""}</span><span class="etiket e-fark">${s.adet} kutu</span>${s.kime ? `<span class="etiket e-mavi">${esc(kisi(s.kime).ad)}</span>` : ""}</div>
+    ${kisa ? `<div class="baslik">📅 Son kullanma: ${s.skt ? sktYaz(s.skt) : "girilmedi"}</div>` : `<div class="baslik">💊 ${esc(s.ad)}</div>
+    ${s.etken ? `<div class="bilgi">${esc(s.etken)}</div>` : ""}`}
+    <div style="margin-top:6px">${kisa ? (d.t ? `<span class="etiket ${d.c}">${d.t}</span>` : `<span class="etiket e-yesil">✅ uygun</span>`) : `<span class="etiket ${d.c}">SKT: ${s.skt ? sktYaz(s.skt) : "girilmedi"}${d.t ? " · " + d.t : ""}</span>`}<span class="etiket e-fark">${s.adet} kutu</span>${s.kime ? `<span class="etiket e-mavi">${esc(kisi(s.kime).ad)}</span>` : ""}</div>
     ${s.yer ? `<div class="bilgi" style="margin-top:4px">📍 ${esc(s.yer)}</div>` : ""}
     ${s.not ? `<div class="not">📝 ${esc(s.not)}</div>` : ""}
     ${(s.fotolar||[]).length ? `<div class="kucuk-yazi" style="margin-top:4px">📷 ${s.fotolar.length} fotoğraf</div>` : ""}
